@@ -19,7 +19,7 @@ def show_3d_pose(kp_3d, dataset='common', radius=1, ax=None):
 
     if ax is None:
         fig = plt.figure(figsize=(12, 7))
-        ax = fig.add_subplot('111', projection='3d', aspect='auto')
+        ax = fig.add_subplot(111, projection='3d', aspect='auto')
 
     skeleton = eval(f'kp_utils.get_{dataset}_skeleton')()
     for i, (j1, j2) in enumerate(skeleton):

@@ -23,20 +23,15 @@ import joblib
 import colorsys
 import numpy as np
 from tqdm import tqdm
-from loguru import logger
-from yolov3.yolo import YOLOv3
-from multi_person_tracker import MPT
 from torch.utils.data import DataLoader
-from torchvision.models.detection import keypointrcnn_resnet50_fpn
 
 from ..models import PARE, HMR
 from .config import update_hparams
 from ..utils.kp_utils import convert_kps
 from ..smplify.run import smplify_runner
-from ..utils.vibe_renderer import Renderer
 from ..utils.pose_tracker import run_posetracker
 from ..utils.train_utils import load_pretrained_model
-from ..dataset.inference import Inference, ImageFolder
+from ..dataset.inference import Inference
 from ..utils.smooth_pose import smooth_pose
 from ..utils.demo_utils import (
     convert_crop_cam_to_orig_img,
@@ -107,55 +102,14 @@ class PARETester:
                 init_xavier=model_cfg.PARE.INIT_XAVIER,
             ).to(self.device)
         else:
-            logger.error(f'{model_cfg.METHOD} is undefined!')
             exit()
 
         return model
 
     def _load_pretrained_model(self):
         # ========= Load pretrained weights ========= #
-        logger.info(f'Loading pretrained model from {self.args.ckpt}')
-        ckpt = torch.load(self.args.ckpt)['state_dict']
+        ckpt = torch.load(self.args.ckpt, map_location=torch.device('cpu'))['state_dict']
         load_pretrained_model(self.model, ckpt, overwrite_shape_mismatch=True, remove_lightning=True)
-        logger.info(f'Loaded pretrained weights from \"{self.args.ckpt}\"')
-
-    def run_tracking(self, video_file, image_folder):
-        # ========= Run tracking ========= #
-        if self.args.tracking_method == 'pose':
-            if not os.path.isabs(video_file):
-                video_file = os.path.join(os.getcwd(), video_file)
-            tracking_results = run_posetracker(video_file, staf_folder=self.args.staf_dir, display=self.args.display)
-        else:
-            # run multi object tracker
-            mot = MPT(
-                device=self.device,
-                batch_size=self.args.tracker_batch_size,
-                display=self.args.display,
-                detector_type=self.args.detector,
-                output_format='dict',
-                yolo_img_size=self.args.yolo_img_size,
-            )
-            tracking_results = mot(image_folder)
-
-        # remove tracklets if num_frames is less than MIN_NUM_FRAMES
-        for person_id in list(tracking_results.keys()):
-            if tracking_results[person_id]['frames'].shape[0] < MIN_NUM_FRAMES:
-                del tracking_results[person_id]
-
-        return tracking_results
-
-    def run_detector(self, image_folder):
-        # run multi object tracker
-        mot = MPT(
-            device=self.device,
-            batch_size=self.args.tracker_batch_size,
-            display=self.args.display,
-            detector_type=self.args.detector,
-            output_format='dict',
-            yolo_img_size=self.args.yolo_img_size,
-        )
-        bboxes = mot.detect(image_folder)
-        return bboxes
 
     @torch.no_grad()
     def run_on_image_folder(self, image_folder, detections, output_path,
@@ -169,7 +123,6 @@ class PARETester:
         joints2d = None
         if run_smplify:
             from ..utils.mmpose import run_mmpose_with_dets
-            logger.info('--> Running MMPose')
             joints2d = run_mmpose_with_dets(image_file_names, detections.copy(),
                                             show_results=False,
                                             results_folder=os.path.join(output_path, 'mmpose_results'))
@@ -201,15 +154,6 @@ class PARETester:
                 inp_images[det_idx] = norm_img.float().to(self.device)
                 if joints2d is not None:
                     norm_joints2d.append(kp_2d[None])
-                ######### DEBUG #########
-                if run_smplify:
-                    import ipdb; ipdb.set_trace()
-                    from ..utils.vis_utils import draw_skeleton
-                    import skimage.io as io
-                    kps = convert_kps(kp_2d[None][:, :23], src='mmpose', dst='spin')
-                    img_w_kps = draw_skeleton(raw_img, kps[0], dataset='spin', unnormalize=False)
-                    io.imsave(os.path.join(output_path, 'mmpose_results', img_fname.split('/')[-1]), img_w_kps)
-                ######### DEBUG #########
             try:
                 output = self.model(inp_images)
             except Exception as e:
@@ -221,13 +165,6 @@ class PARETester:
                 norm_joints2d = np.concatenate(norm_joints2d, axis=0)
                 norm_joints2d = convert_kps(norm_joints2d[:, :23], src='mmpose', dst='spin')
                 norm_joints2d = torch.from_numpy(norm_joints2d).float().to(self.device)
-
-                # from ..utils.vibe_image_utils import normalize_2d_kp
-                # norm_joints2d = normalize_2d_kp(norm_joints2d)
-
-                # import matplotlib.pyplot as plt
-                # plt.imshow(raw_img); plt.show()
-                # import ipdb; ipdb.set_trace()
 
                 # Run Temporal SMPLify
                 update, new_opt_vertices, new_opt_cam, new_opt_pose, new_opt_betas, \
@@ -241,15 +178,6 @@ class PARETester:
                     pose2aa=True,
                     is_video=False,
                 )
-
-                # smpl_vertices torch.Size([1, 6890, 3])
-                # smpl_joints3d torch.Size([1, 49, 3])
-                # smpl_joints2d torch.Size([1, 49, 2])
-                # pred_cam_t torch.Size([1, 3])
-                # pred_segm_mask torch.Size([1, 25, 56, 56])
-                # pred_pose torch.Size([1, 24, 3, 3])
-                # pred_cam torch.Size([1, 3])
-                # pred_shape torch.Size([1, 10])
 
                 for k, v in output.items():
                     output[k] = v.cpu()
@@ -359,7 +287,6 @@ class PARETester:
     @torch.no_grad()
     def run_on_video(self, tracking_results, image_folder, orig_width, orig_height, bbox_scale=1.0):
         # ========= Run PARE on each person ========= #
-        logger.info(f'Running PARE on each tracklet...')
 
         pare_results = {}
         for person_id in tqdm(list(tracking_results.keys())):
@@ -424,7 +351,6 @@ class PARETester:
             if self.args.smooth:
                 min_cutoff = self.args.min_cutoff  # 0.004
                 beta = self.args.beta  # 1.5
-                logger.info(f'Running smoothing on person {person_id}, min_cutoff: {min_cutoff}, beta: {beta}')
                 pred_verts, pred_pose, pred_joints3d = smooth_pose(pred_pose, pred_betas,
                                                                    min_cutoff=min_cutoff, beta=beta)
 
@@ -434,7 +360,6 @@ class PARETester:
                 img_width=orig_width,
                 img_height=orig_height
             )
-            logger.info('Converting smpl keypoints 2d to original image coordinate')
 
             smpl_joints2d = convert_crop_coords_to_orig_img(
                 bbox=bboxes,
@@ -466,9 +391,7 @@ class PARETester:
             orig_img=True,
             wireframe=self.args.wireframe
         )
-
-        logger.info(f'Rendering output video, writing frames to {output_img_folder}')
-
+        
         # prepare results for rendering
         frame_results = prepare_rendering_results(pare_results, num_frames)
         mesh_color = {k: colorsys.hsv_to_rgb(np.random.rand(), 0.5, 1.0) for k in pare_results.keys()}

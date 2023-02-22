@@ -93,7 +93,7 @@ def gen_trans_from_patch_cv(c_x, c_y, src_width, src_height, dst_width, dst_heig
 
 def generate_patch_image_cv(cvimg, c_x, c_y, bb_width, bb_height, patch_width, patch_height, do_flip, scale, rot):
     img = cvimg.copy()
-    img_height, img_width, img_channels = img.shape
+    _, img_width, _ = img.shape
 
     if do_flip:
         img = img[:, ::-1, :]
@@ -103,7 +103,7 @@ def generate_patch_image_cv(cvimg, c_x, c_y, bb_width, bb_height, patch_width, p
 
     img_patch = cv2.warpAffine(img, trans, (int(patch_width), int(patch_height)),
                                flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-
+    
     return img_patch, trans
 
 
@@ -221,6 +221,7 @@ def get_single_image_crop_demo(image, bbox, kp_2d, scale=1.2, crop_size=224):
     if isinstance(image, str):
         if os.path.isfile(image):
             image = cv2.cvtColor(cv2.imread(image), cv2.COLOR_BGR2RGB)
+
         else:
             print(image)
             raise BaseException(image, 'is not a valid file!')
@@ -242,11 +243,11 @@ def get_single_image_crop_demo(image, bbox, kp_2d, scale=1.2, crop_size=224):
         rot=0,
     )
 
-    if kp_2d is not None:
-        for n_jt in range(kp_2d.shape[0]):
-            kp_2d[n_jt, :2] = trans_point2d(kp_2d[n_jt], trans)
-
     raw_image = crop_image.copy()
+
+    #cv2.imshow('Output', raw_image)
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
 
     crop_image = convert_cvimg_to_tensor(crop_image)
 

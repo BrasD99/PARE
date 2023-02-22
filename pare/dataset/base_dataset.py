@@ -30,7 +30,7 @@ from ..core.config import DATASET_FILES, DATASET_FOLDERS, EVAL_MESH_DATASETS
 from ..utils.image_utils import crop, flip_img, flip_pose, flip_kp, transform, \
     rot_aa, random_crop, read_img
 from .coco_occlusion import load_coco_occluders, load_pascal_occluders, occlude_with_pascal_objects, occlude_with_coco_objects
-from pare.utils import kp_utils
+from PARE.pare.utils import kp_utils
 from ..utils.geometry import batch_rot2aa, batch_rodrigues
 
 # from ..utils.image_utils import crop_cv2 as crop
