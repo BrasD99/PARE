@@ -40,7 +40,8 @@ def split_into_chunks(vid_names, seqlen, stride):
 
 
 def combine_npz_files(dir, out_file, add_indices=True):
-    npz_files = sorted([os.path.join(dir, x ) for x in os.listdir(dir) if x.endswith('.npz')])
+    npz_files = sorted([os.path.join(dir, x)
+                       for x in os.listdir(dir) if x.endswith('.npz')])
 
     d = {}
     dout = {}
@@ -70,4 +71,3 @@ def combine_npz_files(dir, out_file, add_indices=True):
     # Write to the target file
     np.savez(out_file, **dout)
     print(f'Saved file {out_file}')
-

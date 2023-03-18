@@ -13,6 +13,7 @@ from ..core import constants
 from .vibe_image_utils import gen_trans_from_patch_cv
 from .kp_utils import map_smpl_to_common
 
+
 def get_transform(center, scale, res, rot=0):
     """Generate transformation matrix."""
     h = 200 * scale
@@ -76,16 +77,16 @@ def crop(img, center, scale, res, rot=0):
     old_x = max(0, ul[0]), min(len(img[0]), br[0])
     old_y = max(0, ul[1]), min(len(img), br[1])
     new_img[new_y[0]:new_y[1], new_x[0]:new_x[1]] = img[old_y[0]:old_y[1],
-                                                    old_x[0]:old_x[1]]
+                                                        old_x[0]:old_x[1]]
 
     if not rot == 0:
         # Remove padding
 
-        new_img = rotate(new_img, rot) # scipy.misc.imrotate(new_img, rot)
+        new_img = rotate(new_img, rot)  # scipy.misc.imrotate(new_img, rot)
         new_img = new_img[pad:-pad, pad:-pad]
 
     # resize image
-    new_img = resize(new_img, res) # scipy.misc.imresize(new_img, res)
+    new_img = resize(new_img, res)  # scipy.misc.imresize(new_img, res)
     return new_img
 
 
@@ -165,7 +166,8 @@ def uncrop(img, center, scale, orig_shape, rot=0, is_rgb=True):
     # Upper left point
     ul = np.array(transform([1, 1], center, scale, res, invert=1)) - 1
     # Bottom right point
-    br = np.array(transform([res[0] + 1, res[1] + 1], center, scale, res, invert=1)) - 1
+    br = np.array(transform([res[0] + 1, res[1] + 1],
+                  center, scale, res, invert=1)) - 1
     # size of cropped image
     crop_shape = [br[1] - ul[1], br[0] - ul[0]]
 
@@ -179,8 +181,10 @@ def uncrop(img, center, scale, orig_shape, rot=0, is_rgb=True):
     # Range to sample from original image
     old_x = max(0, ul[0]), min(orig_shape[1], br[0])
     old_y = max(0, ul[1]), min(orig_shape[0], br[1])
-    img = resize(img, crop_shape) #, interp='nearest') # scipy.misc.imresize(img, crop_shape, interp='nearest')
-    new_img[old_y[0]:old_y[1], old_x[0]:old_x[1]] = img[new_y[0]:new_y[1], new_x[0]:new_x[1]]
+    # , interp='nearest') # scipy.misc.imresize(img, crop_shape, interp='nearest')
+    img = resize(img, crop_shape)
+    new_img[old_y[0]:old_y[1], old_x[0]:old_x[1]
+            ] = img[new_y[0]:new_y[1], new_x[0]:new_x[1]]
     return new_img
 
 
@@ -230,16 +234,20 @@ def flip_pose(pose):
 
 
 def denormalize_images(images):
-    images = images * torch.tensor([0.229, 0.224, 0.225], device=images.device).reshape(1, 3, 1, 1)
-    images = images + torch.tensor([0.485, 0.456, 0.406], device=images.device).reshape(1, 3, 1, 1)
+    images = images * \
+        torch.tensor([0.229, 0.224, 0.225],
+                     device=images.device).reshape(1, 3, 1, 1)
+    images = images + \
+        torch.tensor([0.485, 0.456, 0.406],
+                     device=images.device).reshape(1, 3, 1, 1)
     return images
 
 
 def read_img(img_fn):
     #  return pil_img.fromarray(
-                #  cv2.cvtColor(cv2.imread(img_fn), cv2.COLOR_BGR2RGB))
+    #  cv2.cvtColor(cv2.imread(img_fn), cv2.COLOR_BGR2RGB))
     #  with open(img_fn, 'rb') as f:
-        #  img = pil_img.open(f).convert('RGB')
+    #  img = pil_img.open(f).convert('RGB')
     #  return img
     if img_fn.endswith('jpeg') or img_fn.endswith('jpg'):
         try:
@@ -249,7 +257,7 @@ def read_img(img_fn):
             # logger.warning('{} produced a JPEGRuntimeError', img_fn)
             img = cv2.cvtColor(cv2.imread(img_fn), cv2.COLOR_BGR2RGB)
     else:
-    #  elif img_fn.endswith('png') or img_fn.endswith('JPG') or img_fn.endswith(''):
+        #  elif img_fn.endswith('png') or img_fn.endswith('JPG') or img_fn.endswith(''):
         img = cv2.cvtColor(cv2.imread(img_fn), cv2.COLOR_BGR2RGB)
     return img.astype(np.float32)
 
@@ -263,7 +271,8 @@ def generate_heatmaps_2d(joints, joints_vis, num_joints=24, heatmap_size=56, ima
     target_weight = np.ones((num_joints, 1), dtype=np.float32)
     target_weight[:, 0] = joints_vis[:, 0]
 
-    target = np.zeros((num_joints, heatmap_size, heatmap_size), dtype=np.float32)
+    target = np.zeros(
+        (num_joints, heatmap_size, heatmap_size), dtype=np.float32)
 
     tmp_size = sigma * 3
 
@@ -321,10 +330,11 @@ def generate_part_labels(vertices, faces, cam_t, neural_renderer, body_part_text
     render_rgb = body_parts.clone()
 
     body_parts = body_parts.permute(0, 2, 3, 1)
-    body_parts *= 255. # multiply it with 255 to make labels distant
-    body_parts, _ = body_parts.max(-1) # reduce to single channel
+    body_parts *= 255.  # multiply it with 255 to make labels distant
+    body_parts, _ = body_parts.max(-1)  # reduce to single channel
 
-    body_parts = torch.bucketize(body_parts.detach(), part_bins, right=True) # np.digitize(body_parts, bins, right=True)
+    # np.digitize(body_parts, bins, right=True)
+    body_parts = torch.bucketize(body_parts.detach(), part_bins, right=True)
 
     # add 1 to make background label 0
     body_parts = body_parts.long() + 1
@@ -342,12 +352,13 @@ def generate_heatmaps_2d_batch(joints, num_joints=24, heatmap_size=56, image_siz
     heatmaps = []
     heatmaps_vis = []
     for i in range(batch_size):
-        hm, hm_vis = generate_heatmaps_2d(joints[i], joints_vis[i], num_joints, heatmap_size, image_size, sigma)
+        hm, hm_vis = generate_heatmaps_2d(
+            joints[i], joints_vis[i], num_joints, heatmap_size, image_size, sigma)
         heatmaps.append(hm)
         heatmaps_vis.append(hm_vis)
 
     return torch.from_numpy(np.stack(heatmaps)).float().to('cuda'), \
-           torch.from_numpy(np.stack(heatmaps_vis)).float().to('cuda')
+        torch.from_numpy(np.stack(heatmaps_vis)).float().to('cuda')
 
 
 def get_body_part_texture(faces, n_vertices=6890, non_parametric=False):
@@ -364,7 +375,7 @@ def get_body_part_texture(faces, n_vertices=6890, non_parametric=False):
 
         for jm in joint_mapping:
             for j in jm[0]:
-                smpl_vert_idx[smpl_vert_idx==j] = jm[1]
+                smpl_vert_idx[smpl_vert_idx == j] = jm[1]
 
     vertex_colors = np.ones((n_vertices, 4))
     vertex_colors[:, :3] = smpl_vert_idx[..., None]

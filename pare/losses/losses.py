@@ -43,7 +43,8 @@ class PARELoss(nn.Module):
         super(PARELoss, self).__init__()
         self.criterion_shape = nn.L1Loss()
         self.criterion_keypoints = nn.MSELoss(reduction='none')
-        self.criterion_heatmaps = JointsMSELoss(use_target_weight=True)  # nn.MSELoss(reduction='none')
+        self.criterion_heatmaps = JointsMSELoss(
+            use_target_weight=True)  # nn.MSELoss(reduction='none')
         self.criterion_segm_mask = CrossEntropy()
         self.criterion_regr = nn.MSELoss(reduction='none')
         self.criterion_part = nn.MSELoss()
@@ -52,7 +53,8 @@ class PARELoss(nn.Module):
         self.use_shape_regularization = use_shape_regularization
 
         # self.mean_betas = torch.ones(1, 10) * 0.5
-        self.mean_betas = torch.tensor([0.5, 0.5, -0.5, 0.5, -0.35, 0, 0, 0.4, 0, 0.25])
+        self.mean_betas = torch.tensor(
+            [0.5, 0.5, -0.5, 0.5, -0.35, 0, 0, 0.4, 0, 0.25])
 
         self.loss_weight = loss_weight
         self.gt_train_weight = gt_train_weight
@@ -146,11 +148,13 @@ class PARELoss(nn.Module):
         elif self.use_heatmaps_loss == 'part_segm':
             pred_segm_mask = pred['pred_segm_mask'][has_smpl == 1]
             gt_segm_mask = gt['gt_segm_mask'][has_smpl == 1]
-            loss_segm_mask = self.criterion_segm_mask(score=pred_segm_mask, target=gt_segm_mask)
+            loss_segm_mask = self.criterion_segm_mask(
+                score=pred_segm_mask, target=gt_segm_mask)
         elif self.use_heatmaps_loss == 'part_segm_pool':
             pred_segm_mask = pred['pred_segm_mask'][has_smpl == 1]
             gt_segm_mask = gt['gt_segm_mask'][has_smpl == 1]
-            loss_segm_mask = self.criterion_segm_mask(score=pred_segm_mask, target=gt_segm_mask)
+            loss_segm_mask = self.criterion_segm_mask(
+                score=pred_segm_mask, target=gt_segm_mask)
         elif self.use_heatmaps_loss == 'attention':
             pass
         else:
@@ -219,15 +223,18 @@ class PARELoss(nn.Module):
             loss_dict['loss/loss_segm_mask'] = loss_segm_mask
 
         if 'pred_segm_rgb' in pred.keys():
-            loss_part_segm = self.criterion_part(pred['pred_segm_rgb'], gt['gt_segm_rgb'])
+            loss_part_segm = self.criterion_part(
+                pred['pred_segm_rgb'], gt['gt_segm_rgb'])
             loss_part_segm *= self.smpl_part_loss_weight
             loss_dict['loss/loss_part_segm'] = loss_part_segm
 
         if self.use_shape_regularization:
             batch_size = pred_betas.shape[0]
             if self.mean_betas.device != pred_betas.device:
-                self.mean_betas = self.mean_betas.to(pred_betas.device).type(pred_betas.dtype)
-            loss_beta_reg = (pred_betas - self.mean_betas.repeat(batch_size, 1)).pow(2).mean()
+                self.mean_betas = self.mean_betas.to(
+                    pred_betas.device).type(pred_betas.dtype)
+            loss_beta_reg = (
+                pred_betas - self.mean_betas.repeat(batch_size, 1)).pow(2).mean()
             loss_dict['loss/loss_beta_req'] = loss_beta_reg
 
         loss = sum(loss for loss in loss_dict.values())
@@ -236,7 +243,7 @@ class PARELoss(nn.Module):
 
         loss_dict['loss/total_loss'] = loss
 
-        for k,v in loss_dict.items():
+        for k, v in loss_dict.items():
             if 'loss_cam' in k:
                 continue
             if torch.any(torch.isnan(v)):
@@ -352,7 +359,8 @@ class HMRLoss(nn.Module):
         }
 
         if 'pred_segm_rgb' in pred.keys():
-            loss_part_segm = self.criterion_part(pred['pred_segm_rgb'], gt['gt_segm_rgb'])
+            loss_part_segm = self.criterion_part(
+                pred['pred_segm_rgb'], gt['gt_segm_rgb'])
             loss_part_segm *= self.smpl_part_loss_weight
             loss_dict['loss/loss_part_segm'] = loss_part_segm
 
@@ -382,9 +390,11 @@ def projected_keypoint_loss(
     conf[:, :25] *= openpose_weight
     conf[:, 25:] *= gt_weight
     if reduce == 'mean':
-        loss = (conf * criterion(pred_keypoints_2d, gt_keypoints_2d[:, :, :-1])).mean()
+        loss = (conf * criterion(pred_keypoints_2d,
+                gt_keypoints_2d[:, :, :-1])).mean()
     elif reduce == 'none':
-        loss = (conf * criterion(pred_keypoints_2d, gt_keypoints_2d[:, :, :-1]))
+        loss = (conf * criterion(pred_keypoints_2d,
+                gt_keypoints_2d[:, :, :-1]))
     else:
         raise ValueError(f'{reduce} value is not defined!')
     return loss
@@ -435,7 +445,8 @@ def keypoint_3d_loss(
     if len(gt_keypoints_3d) > 0:
         gt_pelvis = (gt_keypoints_3d[:, 2, :] + gt_keypoints_3d[:, 3, :]) / 2
         gt_keypoints_3d = gt_keypoints_3d - gt_pelvis[:, None, :]
-        pred_pelvis = (pred_keypoints_3d[:, 2, :] + pred_keypoints_3d[:, 3, :]) / 2
+        pred_pelvis = (
+            pred_keypoints_3d[:, 2, :] + pred_keypoints_3d[:, 3, :]) / 2
         pred_keypoints_3d = pred_keypoints_3d - pred_pelvis[:, None, :]
         return (conf * criterion(pred_keypoints_3d, gt_keypoints_3d)).mean()
     else:
@@ -490,7 +501,8 @@ def smpl_losses_uncertainty(
         criterion,
 ):
     pred_rot6d_valid = pred_rot6d[has_smpl == 1]
-    gt_rotmat_valid = batch_rodrigues(gt_pose.view(-1, 3)).view(-1, 24, 3, 3)[has_smpl == 1]
+    gt_rotmat_valid = batch_rodrigues(
+        gt_pose.view(-1, 3)).view(-1, 24, 3, 3)[has_smpl == 1]
     gt_rot6d_valid = rotmat_to_rot6d(gt_rotmat_valid)
     pred_betas_valid = pred_betas[has_smpl == 1]
     gt_betas_valid = gt_betas[has_smpl == 1]
@@ -513,12 +525,14 @@ def smpl_losses(
         criterion,
 ):
     pred_rotmat_valid = pred_rotmat[has_smpl == 1]
-    gt_rotmat_valid = batch_rodrigues(gt_pose.view(-1, 3)).view(-1, 24, 3, 3)[has_smpl == 1]
+    gt_rotmat_valid = batch_rodrigues(
+        gt_pose.view(-1, 3)).view(-1, 24, 3, 3)[has_smpl == 1]
     pred_betas_valid = pred_betas[has_smpl == 1]
     gt_betas_valid = gt_betas[has_smpl == 1]
     pose_conf = pose_conf[has_smpl == 1].unsqueeze(-1).unsqueeze(-1)
     if len(pred_rotmat_valid) > 0:
-        loss_regr_pose = (pose_conf * criterion(pred_rotmat_valid, gt_rotmat_valid)).mean()
+        loss_regr_pose = (
+            pose_conf * criterion(pred_rotmat_valid, gt_rotmat_valid)).mean()
         loss_regr_betas = criterion(pred_betas_valid, gt_betas_valid).mean()
     else:
         loss_regr_pose = torch.FloatTensor(1).fill_(0.).to(pred_rotmat.device)

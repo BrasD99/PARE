@@ -47,7 +47,8 @@ class SaveDataset(Dataset):
         self.is_train = is_train
         self.options = options
         self.img_dir = DATASET_FOLDERS[dataset]
-        self.normalize_img = Normalize(mean=constants.IMG_NORM_MEAN, std=constants.IMG_NORM_STD)
+        self.normalize_img = Normalize(
+            mean=constants.IMG_NORM_MEAN, std=constants.IMG_NORM_STD)
         self.data = np.load(DATASET_FILES[is_train][dataset])
         self.imgname = self.data['imgname']
 
@@ -60,7 +61,8 @@ class SaveDataset(Dataset):
         if num_images > 0:
             # select a random subset of the dataset
             rand = np.random.randint(0, len(self.imgname), size=(num_images))
-            logger.info(f'{rand.shape[0]} images are randomly sampled from {self.dataset}')
+            logger.info(
+                f'{rand.shape[0]} images are randomly sampled from {self.dataset}')
             self.imgname = self.imgname[rand]
             self.data_subset = {}
             for f in self.data.files:
@@ -137,12 +139,14 @@ class SaveDataset(Dataset):
             keypoints_openpose = self.data['openpose']
         except KeyError:
             keypoints_openpose = np.zeros((len(self.imgname), 25, 3))
-        self.keypoints = np.concatenate([keypoints_openpose, keypoints_gt], axis=1)
+        self.keypoints = np.concatenate(
+            [keypoints_openpose, keypoints_gt], axis=1)
 
         # Get gender data, if available
         try:
             gender = self.data['gender']
-            self.gender = np.array([0 if str(g) == 'm' else 1 for g in gender]).astype(np.int32)
+            self.gender = np.array(
+                [0 if str(g) == 'm' else 1 for g in gender]).astype(np.int32)
         except KeyError:
             self.gender = -1 * np.ones(len(self.imgname)).astype(np.int32)
 
@@ -155,7 +159,8 @@ class SaveDataset(Dataset):
                     logger.info(f'Found {len(self.occluders["obj_class"])} suitable '
                                 f'objects from {self.options.OCC_AUG_DATASET} dataset')
                 elif self.options.OCC_AUG_DATASET == 'pascal':
-                    self.occluders = load_pascal_occluders(pascal_voc_root_path=config.PASCAL_ROOT)
+                    self.occluders = load_pascal_occluders(
+                        pascal_voc_root_path=config.PASCAL_ROOT)
                     logger.info(f'Found {len(self.occluders)} suitable '
                                 f'objects from {self.options.OCC_AUG_DATASET} dataset')
             else:
@@ -168,7 +173,8 @@ class SaveDataset(Dataset):
                 else constants.H36M_TO_J14
             self.joint_mapper_gt = constants.J24_TO_J17 if dataset == 'mpi-inf-3dhp' \
                 else constants.J24_TO_J14
-            self.J_regressor = torch.from_numpy(np.load(config.JOINT_REGRESSOR_H36M)).float()
+            self.J_regressor = torch.from_numpy(
+                np.load(config.JOINT_REGRESSOR_H36M)).float()
 
             self.smpl = SMPL(
                 config.SMPL_MODEL_DIR,
@@ -184,7 +190,8 @@ class SaveDataset(Dataset):
                                     create_transl=False)
 
         self.length = self.scale.shape[0]
-        logger.info(f'Loaded {self.dataset} dataset, num samples {self.length}')
+        logger.info(
+            f'Loaded {self.dataset} dataset, num samples {self.length}')
 
     def __getitem__(self, index):
         scale = self.scale[index].copy()
@@ -203,7 +210,8 @@ class SaveDataset(Dataset):
         # logger.debug(f'{rgb_img.shape}, {imgname}')
         rgb_img = cv2.cvtColor(rgb_img.astype(np.float32), cv2.COLOR_BGR2RGB)
 
-        cv2.imwrite(f'data/dataset_folders/cropped_images/{self.dataset}/{index:06d}.jpg', rgb_img)
+        cv2.imwrite(
+            f'data/dataset_folders/cropped_images/{self.dataset}/{index:06d}.jpg', rgb_img)
 
         return rgb_img
 

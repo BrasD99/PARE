@@ -20,7 +20,8 @@ class CrossEntropy(nn.Module):
         ph, pw = score.size(2), score.size(3)
         h, w = target.size(1), target.size(2)
         if ph != h or pw != w:
-            score = F.upsample(input=score, size=(h, w), mode='bilinear', align_corners=True)
+            score = F.upsample(input=score, size=(
+                h, w), mode='bilinear', align_corners=True)
 
         loss = self.criterion(score, target)
 

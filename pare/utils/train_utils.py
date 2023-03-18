@@ -70,16 +70,18 @@ def load_pretrained_model(model, state_dict, strict=False, overwrite_shape_misma
 
                         if pk == 'model.head.fc1.weight':
                             updated_pretrained_state_dict[pk] = torch.cat(
-                                [state_dict[pk], state_dict[pk][:,-7:]], dim=-1
+                                [state_dict[pk], state_dict[pk][:, -7:]], dim=-1
                             )
-                            logger.warning(f'Updated \"{pk}\" param to {updated_pretrained_state_dict[pk].shape} ')
+                            logger.warning(
+                                f'Updated \"{pk}\" param to {updated_pretrained_state_dict[pk].shape} ')
                             continue
                         else:
                             del updated_pretrained_state_dict[pk]
 
             model.load_state_dict(updated_pretrained_state_dict, strict=False)
         else:
-            raise RuntimeError('there are shape inconsistencies between pretrained ckpt and current ckpt')
+            raise RuntimeError(
+                'there are shape inconsistencies between pretrained ckpt and current ckpt')
     return model
 
 
@@ -150,11 +152,13 @@ class CheckBatchGradient(pl.Callback):
             zero_grad_inds.pop(n)
 
             if example_input.grad[zero_grad_inds].abs().sum().item() > 0:
-                raise RuntimeError(f'Model mixes data across the batch dimension for {key} output!')
+                raise RuntimeError(
+                    f'Model mixes data across the batch dimension for {key} output!')
 
             break
 
         logger.info('Batch gradient test is passed!')
+
 
 def set_seed(seed_value):
     if seed_value >= 0:
@@ -162,10 +166,12 @@ def set_seed(seed_value):
         os.environ['PYTHONHASHSEED'] = str(seed_value)
         pl.trainer.seed_everything(seed_value)
 
+
 def add_init_smpl_params_to_dict(state_dict):
     mean_params = np.load(SMPL_MEAN_PARAMS)
     init_pose = torch.from_numpy(mean_params['pose'][:]).unsqueeze(0)
-    init_shape = torch.from_numpy(mean_params['shape'][:].astype('float32')).unsqueeze(0)
+    init_shape = torch.from_numpy(
+        mean_params['shape'][:].astype('float32')).unsqueeze(0)
     init_cam = torch.from_numpy(mean_params['cam']).unsqueeze(0)
     state_dict['model.head.init_pose'] = init_pose
     state_dict['model.head.init_shape'] = init_shape

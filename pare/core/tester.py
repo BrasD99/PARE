@@ -49,7 +49,8 @@ class PARETester:
     def __init__(self, args):
         self.args = args
         self.model_cfg = update_hparams(args.cfg)
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        self.device = torch.device(
+            'cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = self._build_model()
         self._load_pretrained_model()
         self.model.eval()
@@ -108,8 +109,10 @@ class PARETester:
 
     def _load_pretrained_model(self):
         # ========= Load pretrained weights ========= #
-        ckpt = torch.load(self.args.ckpt, map_location=torch.device('cpu'))['state_dict']
-        load_pretrained_model(self.model, ckpt, overwrite_shape_mismatch=True, remove_lightning=True)
+        ckpt = torch.load(self.args.ckpt, map_location=torch.device('cpu'))[
+            'state_dict']
+        load_pretrained_model(
+            self.model, ckpt, overwrite_shape_mismatch=True, remove_lightning=True)
 
     @torch.no_grad()
     def run_on_image_folder(self, image_folder, detections, output_path,
@@ -147,7 +150,8 @@ class PARETester:
                 norm_img, raw_img, kp_2d = get_single_image_crop_demo(
                     img,
                     bbox,
-                    kp_2d=None if joints2d is None else copy.deepcopy(joints2d[img_idx]),
+                    kp_2d=None if joints2d is None else copy.deepcopy(
+                        joints2d[img_idx]),
                     scale=bbox_scale,
                     crop_size=self.model_cfg.DATASET.IMG_RES
                 )
@@ -157,43 +161,48 @@ class PARETester:
             try:
                 output = self.model(inp_images)
             except Exception as e:
-                import IPython; IPython.embed(); exit()
+                import IPython
+                IPython.embed()
+                exit()
             # import matplotlib.pyplot as plt
             # plt.imshow(raw_img); plt.show()
             # ==========================================================================================
             if run_smplify:
                 norm_joints2d = np.concatenate(norm_joints2d, axis=0)
-                norm_joints2d = convert_kps(norm_joints2d[:, :23], src='mmpose', dst='spin')
-                norm_joints2d = torch.from_numpy(norm_joints2d).float().to(self.device)
+                norm_joints2d = convert_kps(
+                    norm_joints2d[:, :23], src='mmpose', dst='spin')
+                norm_joints2d = torch.from_numpy(
+                    norm_joints2d).float().to(self.device)
 
                 # Run Temporal SMPLify
                 update, new_opt_vertices, new_opt_cam, new_opt_pose, new_opt_betas, \
-                new_opt_joints3d, new_opt_joint_loss, opt_joint_loss = smplify_runner(
-                    pred_rotmat=output['pred_pose'],
-                    pred_betas=output['pred_shape'],
-                    pred_cam=output['pred_cam'],
-                    j2d=norm_joints2d,
-                    device=self.device,
-                    batch_size=norm_joints2d.shape[0],
-                    pose2aa=True,
-                    is_video=False,
-                )
+                    new_opt_joints3d, new_opt_joint_loss, opt_joint_loss = smplify_runner(
+                        pred_rotmat=output['pred_pose'],
+                        pred_betas=output['pred_shape'],
+                        pred_cam=output['pred_cam'],
+                        j2d=norm_joints2d,
+                        device=self.device,
+                        batch_size=norm_joints2d.shape[0],
+                        pose2aa=True,
+                        is_video=False,
+                    )
 
                 for k, v in output.items():
                     output[k] = v.cpu()
                 # update the parameters after refinement
-                print(f'Update ratio after SMPLify: {update.sum()} / {norm_joints2d.shape[0]}')
+                print(
+                    f'Update ratio after SMPLify: {update.sum()} / {norm_joints2d.shape[0]}')
 
                 output['smpl_vertices'][update] = new_opt_vertices[update]
                 output['smpl_joints3d'][update] = new_opt_joints3d[update]
                 output['pred_cam'][update] = new_opt_cam[update]
                 output['pred_pose'][update] = new_opt_pose[update]
                 output['pred_shape'][update] = new_opt_betas[update]
-                output['pred_cam_t'][update] = convert_weak_perspective_to_perspective(new_opt_cam)[update]
-
+                output['pred_cam_t'][update] = convert_weak_perspective_to_perspective(new_opt_cam)[
+                    update]
 
             # ==========================================================================================
-            for k,v in output.items():
+            for k, v in output.items():
                 output[k] = v.cpu().numpy()
 
             orig_cam = convert_crop_cam_to_orig_img(
@@ -218,7 +227,8 @@ class PARETester:
             if not self.args.no_save:
                 save_f = os.path.join(
                     output_path, 'pare_results',
-                    os.path.basename(img_fname).replace(img_fname.split('.')[-1], 'pkl')
+                    os.path.basename(img_fname).replace(
+                        img_fname.split('.')[-1], 'pkl')
                 )
                 joblib.dump(output, save_f)
 
@@ -244,10 +254,11 @@ class PARETester:
                     mesh_filename = None
 
                     if self.args.save_obj:
-                        mesh_folder = os.path.join(output_path, 'meshes', os.path.basename(img_fname).split('.')[0])
+                        mesh_folder = os.path.join(
+                            output_path, 'meshes', os.path.basename(img_fname).split('.')[0])
                         os.makedirs(mesh_folder, exist_ok=True)
-                        mesh_filename = os.path.join(mesh_folder, f'{idx:06d}.obj')
-
+                        mesh_filename = os.path.join(
+                            mesh_folder, f'{idx:06d}.obj')
 
                     img = renderer.render(
                         img,
@@ -274,7 +285,8 @@ class PARETester:
                 if self.args.sideview:
                     img = np.concatenate([img, side_img], axis=1)
 
-                cv2.imwrite(os.path.join(output_img_folder, os.path.basename(img_fname)), img)
+                cv2.imwrite(os.path.join(output_img_folder,
+                            os.path.basename(img_fname)), img)
 
                 if self.args.display:
                     cv2.imshow('Video', img)
@@ -311,10 +323,11 @@ class PARETester:
             frames = dataset.frames
             has_keypoints = True if joints2d is not None else False
 
-            dataloader = DataLoader(dataset, batch_size=self.args.batch_size, num_workers=8)
+            dataloader = DataLoader(
+                dataset, batch_size=self.args.batch_size, num_workers=8)
 
             pred_cam, pred_verts, pred_pose, pred_betas, \
-            pred_joints3d, smpl_joints2d, norm_joints2d = [], [], [], [], [], [], []
+                pred_joints3d, smpl_joints2d, norm_joints2d = [], [], [], [], [], [], []
 
             for batch in dataloader:
                 if has_keypoints:
@@ -325,11 +338,16 @@ class PARETester:
                 batch_size = batch.shape[0]
                 output = self.model(batch)
 
-                pred_cam.append(output['pred_cam'])  # [:, :, :3].reshape(batch_size, -1))
-                pred_verts.append(output['smpl_vertices'])  # .reshape(batch_size * seqlen, -1, 3))
-                pred_pose.append(output['pred_pose'])  # [:,:,3:75].reshape(batch_size * seqlen, -1))
-                pred_betas.append(output['pred_shape'])  # [:, :,75:].reshape(batch_size * seqlen, -1))
-                pred_joints3d.append(output['smpl_joints3d'])  # .reshape(batch_size * seqlen, -1, 3))
+                # [:, :, :3].reshape(batch_size, -1))
+                pred_cam.append(output['pred_cam'])
+                # .reshape(batch_size * seqlen, -1, 3))
+                pred_verts.append(output['smpl_vertices'])
+                # [:,:,3:75].reshape(batch_size * seqlen, -1))
+                pred_pose.append(output['pred_pose'])
+                # [:, :,75:].reshape(batch_size * seqlen, -1))
+                pred_betas.append(output['pred_shape'])
+                # .reshape(batch_size * seqlen, -1, 3))
+                pred_joints3d.append(output['smpl_joints3d'])
                 smpl_joints2d.append(output['smpl_joints2d'])
 
             pred_cam = torch.cat(pred_cam, dim=0)
@@ -391,10 +409,11 @@ class PARETester:
             orig_img=True,
             wireframe=self.args.wireframe
         )
-        
+
         # prepare results for rendering
         frame_results = prepare_rendering_results(pare_results, num_frames)
-        mesh_color = {k: colorsys.hsv_to_rgb(np.random.rand(), 0.5, 1.0) for k in pare_results.keys()}
+        mesh_color = {k: colorsys.hsv_to_rgb(
+            np.random.rand(), 0.5, 1.0) for k in pare_results.keys()}
 
         image_file_names = sorted([
             os.path.join(image_folder, x)
@@ -419,9 +438,11 @@ class PARETester:
                 mesh_filename = None
 
                 if self.args.save_obj:
-                    mesh_folder = os.path.join(output_path, 'meshes', f'{person_id:04d}')
+                    mesh_folder = os.path.join(
+                        output_path, 'meshes', f'{person_id:04d}')
                     os.makedirs(mesh_folder, exist_ok=True)
-                    mesh_filename = os.path.join(mesh_folder, f'{frame_idx:06d}.obj')
+                    mesh_filename = os.path.join(
+                        mesh_folder, f'{frame_idx:06d}.obj')
 
                 img = renderer.render(
                     img,
@@ -433,7 +454,7 @@ class PARETester:
 
                 if self.args.draw_keypoints:
                     for idx, pt in enumerate(frame_kp):
-                        cv2.circle(img, (pt[0], pt[1]), 4, (0,255,0), -1)
+                        cv2.circle(img, (pt[0], pt[1]), 4, (0, 255, 0), -1)
 
                 if self.args.sideview:
                     side_img = renderer.render(
@@ -448,7 +469,8 @@ class PARETester:
             if self.args.sideview:
                 img = np.concatenate([img, side_img], axis=1)
 
-            cv2.imwrite(os.path.join(output_img_folder, f'{frame_idx:06d}.png'), img)
+            cv2.imwrite(os.path.join(output_img_folder,
+                        f'{frame_idx:06d}.png'), img)
 
             if self.args.display:
                 cv2.imshow('Video', img)

@@ -60,13 +60,13 @@ def batch_rodrigues(theta):
     Returns:
         Rotation matrix corresponding to the quaternion -- size = [B, 3, 3]
     """
-    l1norm = torch.norm(theta + 1e-8, p = 2, dim = 1)
+    l1norm = torch.norm(theta + 1e-8, p=2, dim=1)
     angle = torch.unsqueeze(l1norm, -1)
     normalized = torch.div(theta, angle)
     angle = angle * 0.5
     v_cos = torch.cos(angle)
     v_sin = torch.sin(angle)
-    quat = torch.cat([v_cos, v_sin * normalized], dim = 1)
+    quat = torch.cat([v_cos, v_sin * normalized], dim=1)
     return quat_to_rotmat(quat)
 
 
@@ -79,7 +79,8 @@ def quat_to_rotmat(quat):
     """
     norm_quat = quat
     norm_quat = norm_quat/norm_quat.norm(p=2, dim=1, keepdim=True)
-    w, x, y, z = norm_quat[:,0], norm_quat[:,1], norm_quat[:,2], norm_quat[:,3]
+    w, x, y, z = norm_quat[:, 0], norm_quat[:,
+                                            1], norm_quat[:, 2], norm_quat[:, 3]
 
     B = quat.size(0)
 
@@ -101,7 +102,7 @@ def rot6d_to_rotmat(x):
     Output:
         (B,3,3) Batch of corresponding rotation matrices
     """
-    x = x.reshape(-1,3,2)
+    x = x.reshape(-1, 3, 2)
     a1 = x[:, :, 0]
     a2 = x[:, :, 1]
     b1 = F.normalize(a1)
@@ -136,7 +137,7 @@ def rotation_matrix_to_angle_axis(rotation_matrix):
         >>> input = torch.rand(2, 3, 4)  # Nx4x4
         >>> output = tgm.rotation_matrix_to_angle_axis(input)  # Nx3
     """
-    if rotation_matrix.shape[1:] == (3,3):
+    if rotation_matrix.shape[1:] == (3, 3):
         rot_mat = rotation_matrix.reshape(-1, 3, 3)
         hom = torch.tensor([0, 0, 1], dtype=torch.float32,
                            device=rotation_matrix.device).reshape(1, 3, 1).expand(rot_mat.shape[0], -1, -1)
@@ -283,6 +284,7 @@ def rotation_matrix_to_quaternion(rotation_matrix, eps=1e-6):
     q *= 0.5
     return q
 
+
 def convert_perspective_to_weak_perspective(
         perspective_camera,
         focal_length=5000.,
@@ -341,17 +343,17 @@ def perspective_projection(points, rotation, translation,
     """
     batch_size = points.shape[0]
     K = torch.zeros([batch_size, 3, 3], device=points.device)
-    K[:,0,0] = focal_length
-    K[:,1,1] = focal_length
-    K[:,2,2] = 1.
-    K[:,:-1, -1] = camera_center
+    K[:, 0, 0] = focal_length
+    K[:, 1, 1] = focal_length
+    K[:, 2, 2] = 1.
+    K[:, :-1, -1] = camera_center
 
     # Transform points
     points = torch.einsum('bij,bkj->bki', rotation, points)
     points = points + translation.unsqueeze(1)
 
     # Apply perspective distortion
-    projected_points = points / points[:,:,-1].unsqueeze(-1)
+    projected_points = points / points[:, :, -1].unsqueeze(-1)
 
     # Apply camera intrinsics
     projected_points = torch.einsum('bij,bkj->bki', K, projected_points)
@@ -371,19 +373,20 @@ def weak_perspective_projection(points, rotation, weak_cam_params, focal_length,
     """
     batch_size = points.shape[0]
     K = torch.zeros([batch_size, 3, 3], device=points.device)
-    K[:,0,0] = focal_length
-    K[:,1,1] = focal_length
-    K[:,2,2] = 1.
-    K[:,:-1, -1] = camera_center
+    K[:, 0, 0] = focal_length
+    K[:, 1, 1] = focal_length
+    K[:, 2, 2] = 1.
+    K[:, :-1, -1] = camera_center
 
-    translation = convert_weak_perspective_to_perspective(weak_cam_params, focal_length, img_res)
+    translation = convert_weak_perspective_to_perspective(
+        weak_cam_params, focal_length, img_res)
 
     # Transform points
     points = torch.einsum('bij,bkj->bki', rotation, points)
     points = points + translation.unsqueeze(1)
 
     # Apply perspective distortion
-    projected_points = points / points[:,:,-1].unsqueeze(-1)
+    projected_points = points / points[:, :, -1].unsqueeze(-1)
 
     # Apply camera intrinsics
     projected_points = torch.einsum('bij,bkj->bki', K, projected_points)
@@ -402,29 +405,30 @@ def estimate_translation_np(S, joints_2d, joints_conf, focal_length=5000., img_s
 
     num_joints = S.shape[0]
     # focal length
-    f = np.array([focal_length,focal_length])
+    f = np.array([focal_length, focal_length])
     # optical center
     center = np.array([img_size/2., img_size/2.])
 
     # transformations
-    Z = np.reshape(np.tile(S[:,2],(2,1)).T,-1)
-    XY = np.reshape(S[:,0:2],-1)
-    O = np.tile(center,num_joints)
-    F = np.tile(f,num_joints)
-    weight2 = np.reshape(np.tile(np.sqrt(joints_conf),(2,1)).T,-1)
+    Z = np.reshape(np.tile(S[:, 2], (2, 1)).T, -1)
+    XY = np.reshape(S[:, 0:2], -1)
+    O = np.tile(center, num_joints)
+    F = np.tile(f, num_joints)
+    weight2 = np.reshape(np.tile(np.sqrt(joints_conf), (2, 1)).T, -1)
 
     # least squares
-    Q = np.array([F*np.tile(np.array([1,0]),num_joints), F*np.tile(np.array([0,1]),num_joints), O-np.reshape(joints_2d,-1)]).T
-    c = (np.reshape(joints_2d,-1)-O)*Z - F*XY
+    Q = np.array([F*np.tile(np.array([1, 0]), num_joints), F *
+                 np.tile(np.array([0, 1]), num_joints), O-np.reshape(joints_2d, -1)]).T
+    c = (np.reshape(joints_2d, -1)-O)*Z - F*XY
 
     # weighted least squares
     W = np.diagflat(weight2)
-    Q = np.dot(W,Q)
-    c = np.dot(W,c)
+    Q = np.dot(W, Q)
+    c = np.dot(W, c)
 
     # square matrix
-    A = np.dot(Q.T,Q)
-    b = np.dot(Q.T,c)
+    A = np.dot(Q.T, Q)
+    b = np.dot(Q.T, c)
 
     # solution
     trans = np.linalg.solve(A, b)
@@ -462,7 +466,8 @@ def estimate_translation(S, joints_2d, focal_length=5000., img_size=224., use_al
         S_i = S[i]
         joints_i = joints_2d[i]
         conf_i = joints_conf[i]
-        trans[i] = estimate_translation_np(S_i, joints_i, conf_i, focal_length=focal_length, img_size=img_size)
+        trans[i] = estimate_translation_np(
+            S_i, joints_i, conf_i, focal_length=focal_length, img_size=img_size)
     return torch.from_numpy(trans).to(device)
 
 
@@ -538,7 +543,8 @@ def estimate_translation_cam(S, joints_2d, focal_length=(5000., 5000.), img_size
         S_i = S[i]
         joints_i = joints_2d[i]
         conf_i = joints_conf[i]
-        trans[i] = estimate_translation_np(S_i, joints_i, conf_i, focal_length=focal_length, img_size=img_size)
+        trans[i] = estimate_translation_np(
+            S_i, joints_i, conf_i, focal_length=focal_length, img_size=img_size)
     return torch.from_numpy(trans).to(device)
 
 
@@ -583,15 +589,19 @@ def look_at(eye, at=np.array([0, 0, 0]), up=np.array([0, 0, 1]), eps=1e-5):
     eps = np.array([eps]).reshape(1, 1).repeat(up.shape[0], axis=0)
 
     z_axis = eye - at
-    z_axis /= np.max(np.stack([np.linalg.norm(z_axis, axis=1, keepdims=True), eps]))
+    z_axis /= np.max(np.stack([np.linalg.norm(z_axis,
+                     axis=1, keepdims=True), eps]))
 
     x_axis = np.cross(up, z_axis)
-    x_axis /= np.max(np.stack([np.linalg.norm(x_axis, axis=1, keepdims=True), eps]))
+    x_axis /= np.max(np.stack([np.linalg.norm(x_axis,
+                     axis=1, keepdims=True), eps]))
 
     y_axis = np.cross(z_axis, x_axis)
-    y_axis /= np.max(np.stack([np.linalg.norm(y_axis, axis=1, keepdims=True), eps]))
+    y_axis /= np.max(np.stack([np.linalg.norm(y_axis,
+                     axis=1, keepdims=True), eps]))
 
-    r_mat = np.concatenate((x_axis.reshape(-1, 3, 1), y_axis.reshape(-1, 3, 1), z_axis.reshape(-1, 3, 1)), axis=2)
+    r_mat = np.concatenate(
+        (x_axis.reshape(-1, 3, 1), y_axis.reshape(-1, 3, 1), z_axis.reshape(-1, 3, 1)), axis=2)
 
     return r_mat
 
@@ -612,7 +622,7 @@ def sample_on_sphere(range_u=(0, 1), range_v=(0, 1)):
     return to_sphere(u, v)
 
 
-def sample_pose_on_sphere(range_v=(0,1), range_u=(0,1), radius=1, up=[0,1,0]):
+def sample_pose_on_sphere(range_v=(0, 1), range_u=(0, 1), radius=1, up=[0, 1, 0]):
     # sample location on unit sphere
     loc = sample_on_sphere(range_u, range_v)
 
@@ -629,10 +639,11 @@ def sample_pose_on_sphere(range_v=(0,1), range_u=(0,1), radius=1, up=[0,1,0]):
 
 
 def rectify_pose(camera_r, body_aa, rotate_x=False):
-    body_r = batch_rodrigues(body_aa).reshape(-1,3,3)
+    body_r = batch_rodrigues(body_aa).reshape(-1, 3, 3)
 
     if rotate_x:
-        rotate_x = torch.tensor([[[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]]])
+        rotate_x = torch.tensor(
+            [[[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]]])
         body_r = body_r @ rotate_x
 
     final_r = camera_r @ body_r
@@ -658,7 +669,7 @@ def euler_to_quaternion(r):
     sy = torch.sin(y)
     cx = torch.cos(x)
     sx = torch.sin(x)
-    quaternion = torch.zeros_like(r.repeat(1,2))[..., :4].to(r.device)
+    quaternion = torch.zeros_like(r.repeat(1, 2))[..., :4].to(r.device)
     quaternion[..., 0] += cx*cy*cz - sx*sy*sz
     quaternion[..., 1] += cx*sy*sz + cy*cz*sx
     quaternion[..., 2] += cx*cz*sy - sx*cy*sz
@@ -675,7 +686,8 @@ def quaternion_to_rotation_matrix(quat):
     """
     norm_quat = quat
     norm_quat = norm_quat / norm_quat.norm(p=2, dim=1, keepdim=True)
-    w, x, y, z = norm_quat[:, 0], norm_quat[:, 1], norm_quat[:, 2], norm_quat[:, 3]
+    w, x, y, z = norm_quat[:, 0], norm_quat[:,
+                                            1], norm_quat[:, 2], norm_quat[:, 3]
 
     B = quat.size(0)
 
@@ -687,6 +699,7 @@ def quaternion_to_rotation_matrix(quat):
                           2 * wz + 2 * xy, w2 - x2 + y2 - z2, 2 * yz - 2 * wx,
                           2 * xz - 2 * wy, 2 * wx + 2 * yz, w2 - x2 - y2 + z2], dim=1).view(B, 3, 3)
     return rotMat
+
 
 def euler_angles_from_rotmat(R):
     """

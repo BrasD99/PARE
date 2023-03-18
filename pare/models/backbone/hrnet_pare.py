@@ -330,9 +330,12 @@ class PoseHighResolutionNet(nn.Module):
 
         self.pretrained_layers = extra['PRETRAINED_LAYERS']
 
-        self.upsample_stage_2 = self._make_upsample_layer(1, num_channel=self.stage2_cfg['NUM_CHANNELS'][-1])
-        self.upsample_stage_3 = self._make_upsample_layer(2, num_channel=self.stage3_cfg['NUM_CHANNELS'][-1])
-        self.upsample_stage_4 = self._make_upsample_layer(3, num_channel=self.stage4_cfg['NUM_CHANNELS'][-1])
+        self.upsample_stage_2 = self._make_upsample_layer(
+            1, num_channel=self.stage2_cfg['NUM_CHANNELS'][-1])
+        self.upsample_stage_3 = self._make_upsample_layer(
+            2, num_channel=self.stage3_cfg['NUM_CHANNELS'][-1])
+        self.upsample_stage_4 = self._make_upsample_layer(
+            3, num_channel=self.stage4_cfg['NUM_CHANNELS'][-1])
 
     def _make_transition_layer(
             self, num_channels_pre_layer, num_channels_cur_layer):
@@ -429,7 +432,8 @@ class PoseHighResolutionNet(nn.Module):
     def _make_upsample_layer(self, num_layers, num_channel, kernel_size=3):
         layers = []
         for i in range(num_layers):
-            layers.append(nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True))
+            layers.append(nn.Upsample(scale_factor=2,
+                          mode='bilinear', align_corners=True))
             layers.append(
                 nn.Conv2d(
                     in_channels=num_channel, out_channels=num_channel,
@@ -567,7 +571,8 @@ def get_cfg_defaults(pretrained, width=32):
     cfg = CN()
     cfg.MODEL = CN()
     cfg.MODEL.INIT_WEIGHTS = True
-    cfg.MODEL.PRETRAINED = pretrained  # 'data/pretrained_models/hrnet_w32-36af842e.pth'
+    # 'data/pretrained_models/hrnet_w32-36af842e.pth'
+    cfg.MODEL.PRETRAINED = pretrained
     cfg.MODEL.EXTRA = HRNET
     cfg.MODEL.NUM_JOINTS = 24
     return cfg

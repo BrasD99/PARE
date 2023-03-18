@@ -33,13 +33,15 @@ class SMPL(_SMPL):
         super(SMPL, self).__init__(*args, **kwargs)
         joints = [constants.JOINT_MAP[i] for i in constants.JOINT_NAMES]
         J_regressor_extra = np.load(config.JOINT_REGRESSOR_TRAIN_EXTRA)
-        self.register_buffer('J_regressor_extra', torch.tensor(J_regressor_extra, dtype=torch.float32))
+        self.register_buffer('J_regressor_extra', torch.tensor(
+            J_regressor_extra, dtype=torch.float32))
         self.joint_map = torch.tensor(joints, dtype=torch.long)
 
     def forward(self, *args, **kwargs):
         kwargs['get_skin'] = True
         smpl_output = super(SMPL, self).forward(*args, **kwargs)
-        extra_joints = vertices2joints(self.J_regressor_extra, smpl_output.vertices)
+        extra_joints = vertices2joints(
+            self.J_regressor_extra, smpl_output.vertices)
         joints = torch.cat([smpl_output.joints, extra_joints], dim=1)
         joints = joints[:, self.joint_map, :]
         output = SMPLOutput(vertices=smpl_output.vertices,
@@ -89,7 +91,8 @@ class SMPLHead(nn.Module):
             )
             joints2d = perspective_projection(
                 joints3d,
-                rotation=torch.eye(3, device=device).unsqueeze(0).expand(batch_size, -1, -1),
+                rotation=torch.eye(3, device=device).unsqueeze(
+                    0).expand(batch_size, -1, -1),
                 translation=cam_t,
                 focal_length=self.focal_length,
                 camera_center=torch.zeros(batch_size, 2, device=device)

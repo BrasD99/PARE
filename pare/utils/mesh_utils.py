@@ -5,7 +5,8 @@ import numpy as np
 
 
 def get_world_mesh_list(planeWidth=4, axisHeight=0.7, axisRadius=0.02, add_plane=True):
-    groundColor = [220, 220, 220, 255]    # face_colors: [R, G, B, transparency]
+    # face_colors: [R, G, B, transparency]
+    groundColor = [220, 220, 220, 255]
     xColor = [255, 0, 0, 128]
     yColor = [0, 255, 0, 128]
     zColor = [0, 0, 255, 128]
@@ -22,10 +23,10 @@ def get_world_mesh_list(planeWidth=4, axisHeight=0.7, axisRadius=0.02, add_plane
         height=axisHeight,
     )
     xAxis.apply_transform(matrix=np.mat(
-        ((  0,  0, 1, axisHeight / 2),
-        (   0,  1, 0, 0),
-        (   -1, 0, 0, 0),
-        (   0,  0, 0, 1))
+        ((0,  0, 1, axisHeight / 2),
+         (0,  1, 0, 0),
+         (-1, 0, 0, 0),
+         (0,  0, 0, 1))
     ))
     xAxis.visual.face_colors = xColor
     yAxis = trimesh.primitives.Cylinder(
@@ -33,10 +34,10 @@ def get_world_mesh_list(planeWidth=4, axisHeight=0.7, axisRadius=0.02, add_plane
         height=axisHeight,
     )
     yAxis.apply_transform(matrix=np.mat(
-        ((  1, 0, 0, 0),
-        (   0, 0, -1, axisHeight / 2),
-        (   0, 1, 0, 0),
-        (   0, 0, 0, 1))
+        ((1, 0, 0, 0),
+         (0, 0, -1, axisHeight / 2),
+         (0, 1, 0, 0),
+         (0, 0, 0, 1))
     ))
     yAxis.visual.face_colors = yColor
     zAxis = trimesh.primitives.Cylinder(
@@ -108,10 +109,10 @@ def getNewCoordinate(axisHeight=0.05, axisRadius=0.001):
         height=axisHeight,
     )
     xAxis2.apply_transform(matrix=np.mat(
-        ((  0,  0, 1, axisHeight / 2),
-        (   0,  1, 0, 0),
-        (   -1, 0, 0, 0),
-        (   0,  0, 0, 1))
+        ((0,  0, 1, axisHeight / 2),
+         (0,  1, 0, 0),
+         (-1, 0, 0, 0),
+         (0,  0, 0, 1))
     ))
     xAxis2.visual.face_colors = xColor
     yAxis2 = trimesh.primitives.Cylinder(
@@ -119,10 +120,10 @@ def getNewCoordinate(axisHeight=0.05, axisRadius=0.001):
         height=axisHeight,
     )
     yAxis2.apply_transform(matrix=np.mat(
-        ((  1, 0, 0, 0),
-        (   0, 0, -1, axisHeight / 2),
-        (   0, 1, 0, 0),
-        (   0, 0, 0, 1))
+        ((1, 0, 0, 0),
+         (0, 0, -1, axisHeight / 2),
+         (0, 1, 0, 0),
+         (0, 0, 0, 1))
     ))
     yAxis2.visual.face_colors = yColor
     zAxis2 = trimesh.primitives.Cylinder(
@@ -156,7 +157,8 @@ def getNewCoordinate(axisHeight=0.05, axisRadius=0.001):
 
 
 def meshVisualization(mesh):
-    worldMeshList = get_world_mesh_list(planeWidth=0.2, axisHeight=0.05, axisRadius=0.001)
+    worldMeshList = get_world_mesh_list(
+        planeWidth=0.2, axisHeight=0.05, axisRadius=0.001)
     mesh.visual.face_colors = [255, 128, 255, 200]
     worldMeshList.append(mesh)
     scene = trimesh.Scene(worldMeshList)
@@ -164,7 +166,8 @@ def meshVisualization(mesh):
 
 
 def meshPairVisualization(mesh1, mesh2):
-    worldMeshList = get_world_mesh_list(planeWidth=0.2, axisHeight=0.05, axisRadius=0.001)
+    worldMeshList = get_world_mesh_list(
+        planeWidth=0.2, axisHeight=0.05, axisRadius=0.001)
     mesh1.visual.face_colors = [255, 128, 255, 200]
     mesh2.visual.face_colors = [255, 255, 128, 200]
 

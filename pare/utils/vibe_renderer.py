@@ -13,19 +13,17 @@
 # for Intelligent Systems. All rights reserved.
 #
 # Contact: ps-license@tuebingen.mpg.de
+from .vis_utils import get_smpl_faces
+from pyrender.constants import RenderFlags
+import numpy as np
+import pyrender
+import trimesh
+import math
 import os
 
 os.environ['PYOPENGL_PLATFORM'] = 'egl'
 # os.environ['EGL_DEVICE_ID'] = os.environ['GPU_DEVICE_ORDINAL'].split(',')[0] \
 #     if 'GPU_DEVICE_ORDINAL' in os.environ.keys() else '0'
-
-import math
-import trimesh
-import pyrender
-import numpy as np
-from pyrender.constants import RenderFlags
-
-from .vis_utils import get_smpl_faces
 
 
 class WeakPerspectiveCamera(pyrender.Camera):
@@ -54,7 +52,7 @@ class WeakPerspectiveCamera(pyrender.Camera):
 
 
 class Renderer:
-    def __init__(self, resolution=(224,224), orig_img=False, wireframe=False):
+    def __init__(self, resolution=(224, 224), orig_img=False, wireframe=False):
         self.resolution = resolution
 
         self.faces = get_smpl_faces()
@@ -67,7 +65,8 @@ class Renderer:
         )
 
         # set the scene
-        self.scene = pyrender.Scene(bg_color=[0.0, 0.0, 0.0, 0.0], ambient_light=(0.3, 0.3, 0.3))
+        self.scene = pyrender.Scene(
+            bg_color=[0.0, 0.0, 0.0, 0.0], ambient_light=(0.3, 0.3, 0.3))
 
         light = pyrender.PointLight(color=[1.0, 1.0, 1.0], intensity=1)
 
@@ -85,14 +84,16 @@ class Renderer:
 
         mesh = trimesh.Trimesh(vertices=verts, faces=self.faces, process=False)
 
-        Rx = trimesh.transformations.rotation_matrix(math.radians(180), [1, 0, 0])
+        Rx = trimesh.transformations.rotation_matrix(
+            math.radians(180), [1, 0, 0])
         mesh.apply_transform(Rx)
 
         if mesh_filename is not None:
             mesh.export(mesh_filename)
 
         if angle and axis:
-            R = trimesh.transformations.rotation_matrix(math.radians(angle), axis)
+            R = trimesh.transformations.rotation_matrix(
+                math.radians(angle), axis)
             mesh.apply_transform(R)
 
         sx, sy, tx, ty = cam

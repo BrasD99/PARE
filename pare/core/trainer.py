@@ -244,10 +244,12 @@ class PARETrainer(pl.LightningModule):
 
             self.register_buffer('K', K)
             self.register_buffer('R', R)
-            self.register_buffer('smpl_faces', torch.from_numpy(self.smpl.faces.astype(np.int32)).unsqueeze(0))
+            self.register_buffer('smpl_faces', torch.from_numpy(
+                self.smpl.faces.astype(np.int32)).unsqueeze(0))
             # bins are discrete part labels, add 1 to avoid quantization error
             n_parts = 24
-            self.register_buffer('part_label_bins', (torch.arange(int(n_parts)) / float(n_parts) * 255.) + 1)
+            self.register_buffer('part_label_bins', (torch.arange(
+                int(n_parts)) / float(n_parts) * 255.) + 1)
 
         # Initialize the training datasets only in training mode
         if not hparams.RUN_TEST:
@@ -255,7 +257,8 @@ class PARETrainer(pl.LightningModule):
 
         self.val_ds = self.val_dataset()
 
-        self.example_input_array = torch.rand(1, 3, self.hparams.DATASET.IMG_RES, self.hparams.DATASET.IMG_RES)
+        self.example_input_array = torch.rand(
+            1, 3, self.hparams.DATASET.IMG_RES, self.hparams.DATASET.IMG_RES)
 
         self.register_buffer(
             'J_regressor',
@@ -263,7 +266,7 @@ class PARETrainer(pl.LightningModule):
         )
 
         if len(self.val_ds) > 0:
-            self.val_accuracy_results = {ds.dataset:[] for ds in self.val_ds}
+            self.val_accuracy_results = {ds.dataset: [] for ds in self.val_ds}
         else:
             self.val_accuracy_results = []
 
@@ -272,8 +275,8 @@ class PARETrainer(pl.LightningModule):
 
     def init_evaluation_variables(self):
         # stores mean mpjpe/pa-mpjpe values for all validation dataset samples
-        self.val_mpjpe = [] # np.zeros(len(self.val_ds))
-        self.val_pampjpe = [] # np.zeros(len(self.val_ds))
+        self.val_mpjpe = []  # np.zeros(len(self.val_ds))
+        self.val_pampjpe = []  # np.zeros(len(self.val_ds))
         self.val_v2v = []
 
         # This dict is used to store metrics and metadata for a more detailed analysis
@@ -281,8 +284,8 @@ class PARETrainer(pl.LightningModule):
         self.evaluation_results = {
             'imgname': [],
             'dataset_name': [],
-            'mpjpe': [], # np.zeros((len(self.val_ds), 14)),
-            'pampjpe': [], # np.zeros((len(self.val_ds), 14)),
+            'mpjpe': [],  # np.zeros((len(self.val_ds), 14)),
+            'pampjpe': [],  # np.zeros((len(self.val_ds), 14)),
             'v2v': [],
         }
 
@@ -321,7 +324,8 @@ class PARETrainer(pl.LightningModule):
         # De-normalize 2D keypoints from [-1,1] to pixel space
         gt_keypoints_2d_orig = gt_keypoints_2d.clone()
         gt_keypoints_2d_orig[:, :, :-1] = \
-            0.5 * self.hparams.DATASET.IMG_RES * (gt_keypoints_2d_orig[:, :, :-1] + 1)
+            0.5 * self.hparams.DATASET.IMG_RES * \
+            (gt_keypoints_2d_orig[:, :, :-1] + 1)
 
         # Estimate camera translation given the model joints and 2D keypoints
         # by minimizing a weighted least squares loss
@@ -353,13 +357,15 @@ class PARETrainer(pl.LightningModule):
 
             gt_smpl_keypoints_2d = perspective_projection(
                 gt_native_model_joints,
-                rotation=torch.eye(3, device=self.device).unsqueeze(0).expand(batch_size, -1, -1),
+                rotation=torch.eye(3, device=self.device).unsqueeze(
+                    0).expand(batch_size, -1, -1),
                 translation=gt_cam_t,
                 focal_length=self.hparams.DATASET.FOCAL_LENGTH,
                 camera_center=camera_center,
             )
             # Normalize keypoints to [-1,1]
-            gt_smpl_keypoints_2d = gt_smpl_keypoints_2d / (self.hparams.DATASET.IMG_RES / 2.)
+            gt_smpl_keypoints_2d = gt_smpl_keypoints_2d / \
+                (self.hparams.DATASET.IMG_RES / 2.)
             batch['smpl_keypoints'] = gt_smpl_keypoints_2d
             #############################################
 
@@ -394,7 +400,6 @@ class PARETrainer(pl.LightningModule):
                 part_bins=self.part_label_bins,
             )
 
-
         loss, loss_dict = self.loss_fn(pred=pred, gt=batch)
         tensorboard_logs = loss_dict
 
@@ -415,15 +420,18 @@ class PARETrainer(pl.LightningModule):
         pred_cam_t = output['pred_cam_t'].detach()
         opt_cam_t = input_batch['gt_cam_t']
 
-        pred_kp_2d = output['pred_kp2d'].detach() if 'pred_kp2d' in output.keys() else None
-        gt_kp_2d = input_batch['smpl_keypoints'] if 'smpl_keypoints' in input_batch.keys() else None
+        pred_kp_2d = output['pred_kp2d'].detach(
+        ) if 'pred_kp2d' in output.keys() else None
+        gt_kp_2d = input_batch['smpl_keypoints'] if 'smpl_keypoints' in input_batch.keys(
+        ) else None
 
         vertex_colors = None
 
         if 'pred_pose_var' in output.keys():
             # color the vertices with uncertainty estimations
             from ..utils.vis_utils import color_vertices_batch
-            per_joint_label = output['pred_pose_var'][:, 144:].reshape(-1,24,6).mean(-1).detach().cpu().numpy()
+            per_joint_label = output['pred_pose_var'][:,
+                                                      144:].reshape(-1, 24, 6).mean(-1).detach().cpu().numpy()
             vertex_colors = color_vertices_batch(per_joint_label)
 
         if 'pred_heatmaps_2d' in output.keys():
@@ -484,12 +492,15 @@ class PARETrainer(pl.LightningModule):
             if self.hparams.TESTING.SAVE_IMAGES:
                 self.validation_summaries(batch, pred, batch_nb, dataloader_nb)
                 error, r_error = torch.zeros(1), torch.zeros(1)
-                error_per_joint, r_error_per_joint = torch.zeros(14), torch.zeros(14)
+                error_per_joint, r_error_per_joint = torch.zeros(
+                    14), torch.zeros(14)
             else:
-                logger.error('Set `TESTING.SAVE_IMAGES` to `True` when using ITW datasets the evaluation dataset')
+                logger.error(
+                    'Set `TESTING.SAVE_IMAGES` to `True` when using ITW datasets the evaluation dataset')
                 exit()
         else:
-            J_regressor_batch = self.J_regressor[None, :].expand(pred_vertices.shape[0], -1, -1)
+            J_regressor_batch = self.J_regressor[None, :].expand(
+                pred_vertices.shape[0], -1, -1)
 
             gt_keypoints_3d = batch['pose_3d'].cuda()
             # Get 14 predicted joints from the mesh
@@ -499,7 +510,8 @@ class PARETrainer(pl.LightningModule):
             pred_keypoints_3d = pred_keypoints_3d - pred_pelvis
 
             # Absolute error (MPJPE)
-            error = torch.sqrt(((pred_keypoints_3d - gt_keypoints_3d) ** 2).sum(dim=-1)).mean(dim=-1).cpu().numpy()
+            error = torch.sqrt(((pred_keypoints_3d - gt_keypoints_3d)
+                               ** 2).sum(dim=-1)).mean(dim=-1).cpu().numpy()
             idx_start = batch_nb * self.hparams.DATASET.BATCH_SIZE
             idx_stop = batch_nb * self.hparams.DATASET.BATCH_SIZE + curr_batch_size
 
@@ -538,10 +550,11 @@ class PARETrainer(pl.LightningModule):
             self.val_mpjpe += error.tolist()
             self.val_pampjpe += r_error.tolist()
 
-            error_per_joint = torch.sqrt(((pred_keypoints_3d - gt_keypoints_3d) ** 2).sum(dim=-1)).cpu().numpy()
+            error_per_joint = torch.sqrt(
+                ((pred_keypoints_3d - gt_keypoints_3d) ** 2).sum(dim=-1)).cpu().numpy()
 
-            self.evaluation_results['mpjpe'] += error_per_joint[:,:14].tolist()
-            self.evaluation_results['pampjpe'] += r_error_per_joint[:,:14].tolist()
+            self.evaluation_results['mpjpe'] += error_per_joint[:, :14].tolist()
+            self.evaluation_results['pampjpe'] += r_error_per_joint[:, :14].tolist()
 
             if 'vertices' in batch.keys():
                 self.evaluation_results['v2v'] += v2v.tolist()
@@ -552,7 +565,7 @@ class PARETrainer(pl.LightningModule):
             self.evaluation_results['dataset_name'] += dataset_names
 
             if self.hparams.TESTING.SAVE_RESULTS:
-                tolist = lambda x: [i for i in x.cpu().numpy()]
+                def tolist(x): return [i for i in x.cpu().numpy()]
                 self.evaluation_results['pose'] += tolist(pred['pred_pose'])
                 self.evaluation_results['shape'] += tolist(pred['pred_shape'])
                 self.evaluation_results['cam'] += tolist(pred['pred_cam'])
@@ -566,7 +579,7 @@ class PARETrainer(pl.LightningModule):
                     mesh_save_dir=mesh_save_dir,
                 )
                 return {
-                    'pred_keypoints_3d' : pred_keypoints_3d,
+                    'pred_keypoints_3d': pred_keypoints_3d,
                     'gt_keypoints_3d': gt_keypoints_3d,
                     'pred_kp2d': pred['pred_kp2d'] if 'pred_kp2d' in pred.keys() else None,
                     'mpjpe': error.mean(),
@@ -598,7 +611,8 @@ class PARETrainer(pl.LightningModule):
 
         pred_vertices = output['smpl_vertices'].detach()
         # pred_cam_t = output['pred_cam_t'].detach()
-        pred_kp_2d = output['pred_kp2d'].detach() if 'pred_kp2d' in output.keys() else None
+        pred_kp_2d = output['pred_kp2d'].detach(
+        ) if 'pred_kp2d' in output.keys() else None
 
         ########### convert camera parameters to display image params ###########
         pred_cam = output['pred_cam'].detach()
@@ -615,7 +629,8 @@ class PARETrainer(pl.LightningModule):
 
         if 'pred_pose_var' in output.keys():
             # color the vertices with uncertainty estimations
-            per_joint_label = output['pred_pose_var'][:, 144:].reshape(-1,24,6).mean(-1).detach().cpu().numpy()
+            per_joint_label = output['pred_pose_var'][:,
+                                                      144:].reshape(-1, 24, 6).mean(-1).detach().cpu().numpy()
             # per_joint_label = per_joint_label ** 2
             vertex_colors = color_vertices_batch(per_joint_label)
 
@@ -624,15 +639,19 @@ class PARETrainer(pl.LightningModule):
 
         mesh_filename = None
         if self.hparams.TESTING.SAVE_MESHES:
-            save_dir = mesh_save_dir if mesh_save_dir else os.path.join(self.hparams.LOG_DIR, 'output_meshes')
+            save_dir = mesh_save_dir if mesh_save_dir else os.path.join(
+                self.hparams.LOG_DIR, 'output_meshes')
             os.makedirs(save_dir, exist_ok=True)
-            mesh_filename = os.path.join(save_dir, f'result_{dataloader_nb:02d}_{batch_idx:05d}.obj')
+            mesh_filename = os.path.join(
+                save_dir, f'result_{dataloader_nb:02d}_{batch_idx:05d}.obj')
 
-            images_mesh = images[0].clone().cpu().numpy().transpose(1, 2, 0) * 255
+            images_mesh = images[0].clone().cpu(
+            ).numpy().transpose(1, 2, 0) * 255
             images_mesh = np.clip(images_mesh, 0, 255).astype(np.uint8)
 
             cv2.imwrite(
-                os.path.join(save_dir, f'result_{dataloader_nb:02d}_{batch_idx:05d}.jpg'),
+                os.path.join(
+                    save_dir, f'result_{dataloader_nb:02d}_{batch_idx:05d}.jpg'),
                 cv2.cvtColor(images_mesh, cv2.COLOR_BGR2RGB)
             )
 
@@ -668,7 +687,8 @@ class PARETrainer(pl.LightningModule):
             save_dir = os.path.join(self.hparams.LOG_DIR, 'output_images')
             os.makedirs(save_dir, exist_ok=True)
             cv2.imwrite(
-                os.path.join(save_dir, f'result_{dataloader_nb:02d}_{batch_idx:05d}.jpg'),
+                os.path.join(
+                    save_dir, f'result_{dataloader_nb:02d}_{batch_idx:05d}.jpg'),
                 cv2.cvtColor(images_pred, cv2.COLOR_BGR2RGB)
             )
         return cv2.cvtColor(images_pred, cv2.COLOR_BGR2RGB)
@@ -682,11 +702,12 @@ class PARETrainer(pl.LightningModule):
         self.val_pampjpe = np.array(self.val_pampjpe)
         self.val_v2v = np.array(self.val_v2v)
 
-        for k,v in self.evaluation_results.items():
+        for k, v in self.evaluation_results.items():
             self.evaluation_results[k] = np.array(v)
 
         if len(self.val_ds) == 1:
-            avg_mpjpe, avg_pampjpe = 1000 * self.val_mpjpe.mean(), 1000 * self.val_pampjpe.mean()
+            avg_mpjpe, avg_pampjpe = 1000 * self.val_mpjpe.mean(), 1000 * \
+                self.val_pampjpe.mean()
             avg_v2v = 1000 * self.val_v2v.mean()
 
             logger.info(f'***** Epoch {self.current_epoch} *****')
@@ -704,17 +725,20 @@ class PARETrainer(pl.LightningModule):
 
             # save the mpjpe and pa-mpjpe results per image
             if self.hparams.TESTING.SAVE_IMAGES and len(self.val_images_errors) > 0:
-                save_path = os.path.join(self.hparams.LOG_DIR, 'val_images_error.npy')
+                save_path = os.path.join(
+                    self.hparams.LOG_DIR, 'val_images_error.npy')
                 logger.info(f'Saving the errors of images {save_path}')
                 np.save(save_path, np.asarray(self.val_images_errors))
 
             # save the detailed experiment results for post-analysis script
             joblib.dump(
                 self.evaluation_results,
-                os.path.join(self.hparams.LOG_DIR, f'evaluation_results_{self.hparams.DATASET.VAL_DS}.pkl')
+                os.path.join(
+                    self.hparams.LOG_DIR, f'evaluation_results_{self.hparams.DATASET.VAL_DS}.pkl')
             )
 
-            avg_mpjpe, avg_pampjpe = torch.tensor(avg_mpjpe), torch.tensor(avg_pampjpe)
+            avg_mpjpe, avg_pampjpe = torch.tensor(
+                avg_mpjpe), torch.tensor(avg_pampjpe)
             tensorboard_logs = {
                 'val/val_mpjpe': avg_mpjpe,
                 'val/val_pampjpe': avg_pampjpe,
@@ -758,14 +782,17 @@ class PARETrainer(pl.LightningModule):
 
                 # save the mpjpe and pa-mpjpe results per image
                 if self.hparams.TESTING.SAVE_IMAGES and len(self.val_images_errors) > 0:
-                    save_path = os.path.join(self.hparams.LOG_DIR, 'val_images_error.npy')
+                    save_path = os.path.join(
+                        self.hparams.LOG_DIR, 'val_images_error.npy')
                     logger.info(f'Saving the errors of images {save_path}')
                     np.save(save_path, np.asarray(self.val_images_errors))
 
-                eval_res = {k: v[idxs] for k,v in self.evaluation_results.items()}
+                eval_res = {k: v[idxs]
+                            for k, v in self.evaluation_results.items()}
                 joblib.dump(
                     eval_res,
-                    os.path.join(self.hparams.LOG_DIR, f'evaluation_results_{ds_name}.pkl')
+                    os.path.join(self.hparams.LOG_DIR,
+                                 f'evaluation_results_{ds_name}.pkl')
                 )
 
                 # always set the first dataset as the main one
@@ -811,11 +838,14 @@ class PARETrainer(pl.LightningModule):
         elif self.hparams.DATASET.TRAIN_DS == 'stage':
             # stage dataset is used to
             stage_datasets = self.hparams.DATASET.STAGE_DATASETS.split(' ')
-            stage_dict = {x.split('+')[0]: x.split('+')[1] for x in stage_datasets}
-            assert self.hparams.DATASET.STAGE_DATASETS.startswith('0'), 'Stage datasets should start from epoch 0'
+            stage_dict = {x.split('+')[0]: x.split('+')[1]
+                          for x in stage_datasets}
+            assert self.hparams.DATASET.STAGE_DATASETS.startswith(
+                '0'), 'Stage datasets should start from epoch 0'
 
             if str(self.current_epoch) in stage_dict.keys():
-                self.hparams.DATASET.DATASETS_AND_RATIOS = stage_dict[str(self.current_epoch)]
+                self.hparams.DATASET.DATASETS_AND_RATIOS = stage_dict[str(
+                    self.current_epoch)]
 
             train_ds = EFTDataset(
                 options=self.hparams.DATASET,
@@ -892,12 +922,14 @@ class PARETrainer(pl.LightningModule):
         if ds_name:
             fname = f'val_accuracy_results_{ds_name}.json'
             json_file = os.path.join(self.hparams.LOG_DIR, fname)
-            self.val_accuracy_results[ds_name].append([self.global_step, acc, self.current_epoch])
+            self.val_accuracy_results[ds_name].append(
+                [self.global_step, acc, self.current_epoch])
             with open(json_file, 'w') as f:
                 json.dump(self.val_accuracy_results[ds_name], f, indent=4)
         else:
             fname = 'val_accuracy_results.json'
             json_file = os.path.join(self.hparams.LOG_DIR, fname)
-            self.val_accuracy_results.append([self.global_step, acc, self.current_epoch])
+            self.val_accuracy_results.append(
+                [self.global_step, acc, self.current_epoch])
             with open(json_file, 'w') as f:
                 json.dump(self.val_accuracy_results, f, indent=4)

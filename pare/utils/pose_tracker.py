@@ -59,7 +59,7 @@ def read_posetrack_keypoints(output_folder):
         # print(idx, data)
         for person in data['people']:
             person_id = person['person_id'][0]
-            joints2d  = person['pose_keypoints_2d']
+            joints2d = person['pose_keypoints_2d']
             if person_id in people.keys():
                 people[person_id]['joints2d'].append(joints2d)
                 people[person_id]['frames'].append(idx)
@@ -72,7 +72,8 @@ def read_posetrack_keypoints(output_folder):
                 people[person_id]['frames'].append(idx)
 
     for k in people.keys():
-        people[k]['joints2d'] = np.array(people[k]['joints2d']).reshape((len(people[k]['joints2d']), -1, 3))
+        people[k]['joints2d'] = np.array(people[k]['joints2d']).reshape(
+            (len(people[k]['joints2d']), -1, 3))
         people[k]['frames'] = np.array(people[k]['frames'])
 
     return people

@@ -34,6 +34,7 @@ import matplotlib.pyplot as plt
 from ..core.config import COCO_OCCLUDERS_FILE, PASCAL_OCCLUDERS_FILE
 from ..utils.kp_utils import get_spin_joint_names
 
+
 def main(type='coco'):
     """Demo of how to use the code"""
 
@@ -61,9 +62,11 @@ def load_pascal_occluders(pascal_voc_root_path):
         return joblib.load(PASCAL_OCCLUDERS_FILE)
     else:
         occluders = []
-        structuring_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
+        structuring_element = cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE, (8, 8))
 
-        annotation_paths = list_filepaths(os.path.join(pascal_voc_root_path, 'Annotations'))
+        annotation_paths = list_filepaths(
+            os.path.join(pascal_voc_root_path, 'Annotations'))
         for annotation_path in annotation_paths:
             xml_root = xml.etree.ElementTree.parse(annotation_path).getroot()
             is_segmented = (xml_root.find('segmented').text != '0')
@@ -78,7 +81,8 @@ def load_pascal_occluders(pascal_voc_root_path):
                 is_truncated = (obj.find('truncated').text != '0')
                 if not is_person and not is_difficult and not is_truncated:
                     bndbox = obj.find('bndbox')
-                    box = [int(bndbox.find(s).text) for s in ['xmin', 'ymin', 'xmax', 'ymax']]
+                    box = [int(bndbox.find(s).text)
+                           for s in ['xmin', 'ymin', 'xmax', 'ymax']]
                     boxes.append((i_obj, box))
 
             if not boxes:
@@ -87,14 +91,17 @@ def load_pascal_occluders(pascal_voc_root_path):
             im_filename = xml_root.find('filename').text
             seg_filename = im_filename.replace('jpg', 'png')
 
-            im_path = os.path.join(pascal_voc_root_path, 'JPEGImages', im_filename)
-            seg_path = os.path.join(pascal_voc_root_path, 'SegmentationObject', seg_filename)
+            im_path = os.path.join(pascal_voc_root_path,
+                                   'JPEGImages', im_filename)
+            seg_path = os.path.join(
+                pascal_voc_root_path, 'SegmentationObject', seg_filename)
 
             im = np.asarray(PIL.Image.open(im_path))
             labels = np.asarray(PIL.Image.open(seg_path))
 
             for i_obj, (xmin, ymin, xmax, ymax) in boxes:
-                object_mask = (labels[ymin:ymax, xmin:xmax] == i_obj + 1).astype(np.uint8) * 255
+                object_mask = (labels[ymin:ymax, xmin:xmax]
+                               == i_obj + 1).astype(np.uint8) * 255
                 object_image = im[ymin:ymax, xmin:xmax]
                 if cv2.countNonZero(object_mask) < 500:
                     # Ignore small objects
@@ -103,14 +110,16 @@ def load_pascal_occluders(pascal_voc_root_path):
                 # Reduce the opacity of the mask along the border for smoother blending
                 eroded = cv2.erode(object_mask, structuring_element)
                 object_mask[eroded < object_mask] = 192
-                object_with_mask = np.concatenate([object_image, object_mask[..., np.newaxis]], axis=-1)
+                object_with_mask = np.concatenate(
+                    [object_image, object_mask[..., np.newaxis]], axis=-1)
 
                 # Downscale for efficiency
                 object_with_mask = resize_by_factor(object_with_mask, 0.5)
                 occluders.append(object_with_mask)
 
         print('Saving pascal occluders')
-        joblib.dump(occluders, 'data/occlusion_augmentation/pascal_occluders.pkl')
+        joblib.dump(
+            occluders, 'data/occlusion_augmentation/pascal_occluders.pkl')
         return occluders
 
 
@@ -192,7 +201,8 @@ def occlude_with_coco_objects(im, kp2d, occluders, img_size=224, max_n_objects=4
         # get object category, obj_height, scale (person_h/obj_h)
         occluder_info = random.choice(occluders['stats'][joint_names[jid]])
         try:
-            occluder_obj_id = random.choice(np.argwhere(occluders['obj_class'] == occluder_info[0]))[0]
+            occluder_obj_id = random.choice(np.argwhere(
+                occluders['obj_class'] == occluder_info[0]))[0]
         except:
             continue
 
@@ -203,7 +213,9 @@ def occlude_with_coco_objects(im, kp2d, occluders, img_size=224, max_n_objects=4
         # scale_factor = current_scale / occluder_obj_scale
 
         occluder_obj_height = occluder_obj_mask.shape[0]
-        scale_factor = 1. / (occluder_obj_mask.shape[0]/img_size) * np.random.uniform(0.05, 0.7)
+        scale_factor = 1. / \
+            (occluder_obj_mask.shape[0]/img_size) * \
+            np.random.uniform(0.05, 0.7)
 
         # logger.debug(f'Selected joint: {joint_names[jid]}, position: {kp2d[jid]}, object: {occluder_info[0]}, '
         #              f'scale: {occluder_info[2]}, scale_factor: {scale_factor}')
@@ -216,6 +228,7 @@ def occlude_with_coco_objects(im, kp2d, occluders, img_size=224, max_n_objects=4
         paste_over(im_src=occluder_obj_mask, im_dst=result, center=center)
 
     return result
+
 
 def paste_over(im_src, im_dst, center):
     """Pastes `im_src` onto `im_dst` at a specified position, with alpha blending, in place.
@@ -249,14 +262,15 @@ def paste_over(im_src, im_dst, center):
     alpha = region_src[..., 3:].astype(np.float32) / 255
 
     im_dst[start_dst[1]:end_dst[1], start_dst[0]:end_dst[0]] = (
-            alpha * color_src + (1 - alpha) * region_dst)
+        alpha * color_src + (1 - alpha) * region_dst)
 
 
 def resize_by_factor(im, factor):
     """Returns a copy of `im` resized by `factor`, using bilinear interp for up and area interp
     for downscaling.
     """
-    new_size = tuple(np.round(np.array([im.shape[1], im.shape[0]]) * factor).astype(int))
+    new_size = tuple(
+        np.round(np.array([im.shape[1], im.shape[0]]) * factor).astype(int))
     interp = cv2.INTER_LINEAR if factor > 1.0 else cv2.INTER_AREA
     return cv2.resize(im, new_size, fx=factor, fy=factor, interpolation=interp)
 
@@ -278,4 +292,3 @@ def test_usage():
 
 if __name__ == '__main__':
     main()
-

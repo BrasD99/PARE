@@ -36,10 +36,14 @@ DATASET_LMDB_PATH = 'data/lmdb'
 
 MMPOSE_PATH = '/is/cluster/work/mkocabas/projects/mmpose'
 MMDET_PATH = '/is/cluster/work/mkocabas/projects/mmdetection'
-MMPOSE_CFG = os.path.join(MMPOSE_PATH, 'configs/top_down/hrnet/coco-wholebody/hrnet_w48_coco_wholebody_256x192.py')
-MMPOSE_CKPT = os.path.join(MMPOSE_PATH, 'checkpoints/hrnet_w48_coco_wholebody_256x192-643e18cb_20200922.pth')
-MMDET_CFG = os.path.join(MMDET_PATH, 'configs/faster_rcnn/faster_rcnn_r50_fpn_1x_coco.py')
-MMDET_CKPT = os.path.join(MMDET_PATH, 'checkpoints/faster_rcnn_r50_fpn_1x_coco_20200130-047c8118.pth')
+MMPOSE_CFG = os.path.join(
+    MMPOSE_PATH, 'configs/top_down/hrnet/coco-wholebody/hrnet_w48_coco_wholebody_256x192.py')
+MMPOSE_CKPT = os.path.join(
+    MMPOSE_PATH, 'checkpoints/hrnet_w48_coco_wholebody_256x192-643e18cb_20200922.pth')
+MMDET_CFG = os.path.join(
+    MMDET_PATH, 'configs/faster_rcnn/faster_rcnn_r50_fpn_1x_coco.py')
+MMDET_CKPT = os.path.join(
+    MMDET_PATH, 'checkpoints/faster_rcnn_r50_fpn_1x_coco_20200130-047c8118.pth')
 
 PW3D_ROOT = 'data/dataset_folders/3dpw'
 OH3D_ROOT = 'data/dataset_folders/3doh'
@@ -111,7 +115,7 @@ hparams.DATASET.NUM_IMAGES = -1
 hparams.DATASET.TRAIN_NUM_IMAGES = -1
 hparams.DATASET.TEST_NUM_IMAGES = -1
 hparams.DATASET.IMG_RES = 224
-hparams.DATASET.USE_HEATMAPS = '' # 'hm', 'hm_soft', 'part_segm', 'attention'
+hparams.DATASET.USE_HEATMAPS = ''  # 'hm', 'hm_soft', 'part_segm', 'attention'
 hparams.DATASET.RENDER_RES = 480
 hparams.DATASET.MESH_COLOR = 'pinkish'
 hparams.DATASET.FOCAL_LENGTH = 5000.
@@ -130,7 +134,7 @@ hparams.DATASET.NONPARAMETRIC = False
 # optimizer config
 hparams.OPTIMIZER = CN()
 hparams.OPTIMIZER.TYPE = 'adam'
-hparams.OPTIMIZER.LR = 0.0001 # 0.00003
+hparams.OPTIMIZER.LR = 0.0001  # 0.00003
 hparams.OPTIMIZER.WD = 0.0
 
 # Training process hparams
@@ -143,7 +147,7 @@ hparams.TRAINING.LOG_SAVE_INTERVAL = 50
 hparams.TRAINING.LOG_FREQ_TB_IMAGES = 500
 hparams.TRAINING.CHECK_VAL_EVERY_N_EPOCH = 1
 hparams.TRAINING.RELOAD_DATALOADERS_EVERY_EPOCH = True
-hparams.TRAINING.NUM_SMPLIFY_ITERS = 100 # 50
+hparams.TRAINING.NUM_SMPLIFY_ITERS = 100  # 50
 hparams.TRAINING.RUN_SMPLIFY = False
 hparams.TRAINING.SMPLIFY_THRESHOLD = 100
 hparams.TRAINING.DROPOUT_P = 0.2
@@ -165,7 +169,7 @@ hparams.TESTING.USE_GT_CAM = False
 
 # PARE method hparams
 hparams.PARE = CN()
-hparams.PARE.BACKBONE = 'resnet50' # hrnet_w32-conv, hrnet_w32-interp
+hparams.PARE.BACKBONE = 'resnet50'  # hrnet_w32-conv, hrnet_w32-interp
 hparams.PARE.NUM_JOINTS = 24
 hparams.PARE.SOFTMAX_TEMP = 1.
 hparams.PARE.NUM_FEATURES_SMPL = 64
@@ -181,7 +185,8 @@ hparams.PARE.USE_BRANCH_NONLOCAL = None
 hparams.PARE.USE_HMR_REGRESSION = False
 hparams.PARE.USE_COATTENTION = False
 hparams.PARE.NUM_COATTENTION_ITER = 1
-hparams.PARE.COATTENTION_CONV = 'simple' # 'double_1', 'double_3', 'single_1', 'single_3', 'simple'
+# 'double_1', 'double_3', 'single_1', 'single_3', 'simple'
+hparams.PARE.COATTENTION_CONV = 'simple'
 hparams.PARE.USE_UPSAMPLING = False
 hparams.PARE.DECONV_CONV_KERNEL_SIZE = 4
 hparams.PARE.USE_SOFT_ATTENTION = False
@@ -263,17 +268,17 @@ def get_grid_search_configs(config, excluded_keys=[]):
     flattened_config_dict = flatten(config, reducer='path')
     hyper_params = []
 
-    for k,v in flattened_config_dict.items():
-        if isinstance(v,list):
+    for k, v in flattened_config_dict.items():
+        if isinstance(v, list):
             if k in excluded_keys:
                 flattened_config_dict[k] = ['+'.join(v)]
             elif len(v) > 1:
                 hyper_params += [k]
 
-        if isinstance(v, list) and isinstance(v[0], bool) :
+        if isinstance(v, list) and isinstance(v[0], bool):
             flattened_config_dict[k] = bool_to_string(v)
 
-        if not isinstance(v,list):
+        if not isinstance(v, list):
             if isinstance(v, bool):
                 flattened_config_dict[k] = bool_to_string(v)
             else:
@@ -288,13 +293,13 @@ def get_grid_search_configs(config, excluded_keys=[]):
         for param_name, param_value in exp.items():
             # print(param_name,type(param_value))
             if isinstance(param_value, list) and (param_value[0] in ['True', 'False']):
-                exp[param_name] = [True if x == 'True' else False for x in param_value]
+                exp[param_name] = [True if x ==
+                                   'True' else False for x in param_value]
             if param_value in ['True', 'False']:
                 if param_value == 'True':
                     exp[param_name] = True
                 else:
                     exp[param_name] = False
-
 
         experiments[exp_id] = unflatten(exp, splitter='path')
 
@@ -320,8 +325,10 @@ def run_grid_search_experiments(
     )
     logger.info(f'Grid search hparams: \n {hyperparams}')
 
-    different_configs = [update_hparams_from_dict(c) for c in different_configs]
-    logger.info(f'======> Number of experiment configurations is {len(different_configs)}')
+    different_configs = [update_hparams_from_dict(
+        c) for c in different_configs]
+    logger.info(
+        f'======> Number of experiment configurations is {len(different_configs)}')
 
     config_to_run = CN(different_configs[cfg_id])
     config_to_run.merge_from_list(cmd_opts)
@@ -356,7 +363,8 @@ def run_grid_search_experiments(
         logdir = config_to_run.LOG_DIR + '/occlusion_test'
     elif script == 'eval.py':
         if config_to_run.DATASET.USE_GENDER:
-            logdir = config_to_run.LOG_DIR + '/evaluation_mesh_gender_' + config_to_run.DATASET.VAL_DS
+            logdir = config_to_run.LOG_DIR + \
+                '/evaluation_mesh_gender_' + config_to_run.DATASET.VAL_DS
         else:
             logdir = config_to_run.LOG_DIR + '/evaluation_mesh_' + config_to_run.DATASET.VAL_DS
     elif script == 'visualize_activations.py':
@@ -367,15 +375,18 @@ def run_grid_search_experiments(
         logdir = config_to_run.LOG_DIR + '/vis_parts'
     elif script == 'eval_cam.py':
         if config_to_run.DATASET.USE_GENDER:
-            logdir = config_to_run.LOG_DIR + '/evaluation_mesh_j24_gender_' + config_to_run.DATASET.VAL_DS
+            logdir = config_to_run.LOG_DIR + \
+                '/evaluation_mesh_j24_gender_' + config_to_run.DATASET.VAL_DS
         else:
-            logdir = config_to_run.LOG_DIR + '/evaluation_mesh_j24_' + config_to_run.DATASET.VAL_DS
+            logdir = config_to_run.LOG_DIR + \
+                '/evaluation_mesh_j24_' + config_to_run.DATASET.VAL_DS
     else:
         logdir = os.path.join(config_to_run.LOG_DIR, config_to_run.PROJECT_NAME,
                               config_to_run.EXP_NAME, logdir + '_train')
 
     os.makedirs(logdir, exist_ok=True)
-    shutil.copy(src=cfg_file, dst=os.path.join(config_to_run.LOG_DIR, 'config.yaml'))
+    shutil.copy(src=cfg_file, dst=os.path.join(
+        config_to_run.LOG_DIR, 'config.yaml'))
 
     config_to_run.LOG_DIR = logdir
 

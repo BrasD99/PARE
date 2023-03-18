@@ -479,9 +479,12 @@ class PoseHighResolutionNet(nn.Module):
         # for idx, _x in enumerate(x):
         #     print(idx, _x.shape)
 
-        x1 = F.interpolate(x[0], size=(x0_h, x0_w), mode='bilinear', align_corners=True)
-        x2 = F.interpolate(x[1], size=(x0_h, x0_w), mode='bilinear', align_corners=True)
-        x3 = F.interpolate(x[2], size=(x0_h, x0_w), mode='bilinear', align_corners=True)
+        x1 = F.interpolate(x[0], size=(x0_h, x0_w),
+                           mode='bilinear', align_corners=True)
+        x2 = F.interpolate(x[1], size=(x0_h, x0_w),
+                           mode='bilinear', align_corners=True)
+        x3 = F.interpolate(x[2], size=(x0_h, x0_w),
+                           mode='bilinear', align_corners=True)
 
         # x1 = self.downsample_stage_1(x[0])
         # x2 = self.downsample_stage_2(x[1])
@@ -566,7 +569,8 @@ def get_cfg_defaults(pretrained, width=32):
     cfg = CN()
     cfg.MODEL = CN()
     cfg.MODEL.INIT_WEIGHTS = True
-    cfg.MODEL.PRETRAINED = pretrained  # 'data/pretrained_models/hrnet_w32-36af842e.pth'
+    # 'data/pretrained_models/hrnet_w32-36af842e.pth'
+    cfg.MODEL.PRETRAINED = pretrained
     cfg.MODEL.EXTRA = HRNET
     cfg.MODEL.NUM_JOINTS = 24
     return cfg

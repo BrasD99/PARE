@@ -50,7 +50,8 @@ class BaseDataset(Dataset):
         self.is_train = is_train
         self.options = options
         self.img_dir = DATASET_FOLDERS[dataset]
-        self.normalize_img = Normalize(mean=constants.IMG_NORM_MEAN, std=constants.IMG_NORM_STD)
+        self.normalize_img = Normalize(
+            mean=constants.IMG_NORM_MEAN, std=constants.IMG_NORM_STD)
         self.data = np.load(DATASET_FILES[is_train][dataset])
         self.imgname = self.data['imgname']
 
@@ -59,8 +60,10 @@ class BaseDataset(Dataset):
         if num_images > 0:
             if is_train:
                 # select a random subset of the dataset
-                rand = np.random.randint(0, len(self.imgname), size=(num_images))
-                logger.info(f'{rand.shape[0]} images are randomly sampled from {self.dataset}')
+                rand = np.random.randint(
+                    0, len(self.imgname), size=(num_images))
+                logger.info(
+                    f'{rand.shape[0]} images are randomly sampled from {self.dataset}')
                 self.imgname = self.imgname[rand]
                 self.data_subset = {}
                 for f in self.data.files:
@@ -68,7 +71,8 @@ class BaseDataset(Dataset):
                 self.data = self.data_subset
             else:
                 interval = len(self.imgname) // num_images
-                logger.info(f'{len(self.imgname[::interval])} images are selected from {self.dataset}')
+                logger.info(
+                    f'{len(self.imgname[::interval])} images are selected from {self.dataset}')
                 self.imgname = self.imgname[::interval]
                 self.data_subset = {}
                 for f in self.data.files:
@@ -88,10 +92,10 @@ class BaseDataset(Dataset):
         # Bounding boxes are assumed to be in the center and scale format
         self.scale = self.data['scale']
         self.center = self.data['center']
-        
+
         # If False, do not do augmentation
         self.use_augmentation = use_augmentation
-        
+
         # Get gt SMPL parameters, if available
         try:
             if 'pose_0yaw_inverseyz' in self.data:
@@ -107,7 +111,7 @@ class BaseDataset(Dataset):
             self.has_smpl = np.zeros(len(self.imgname))
         if ignore_3d:
             self.has_smpl = np.zeros(len(self.imgname))
-        
+
         # Get gt 3D pose, if available
         try:
             self.pose_3d = self.data['S']
@@ -129,12 +133,14 @@ class BaseDataset(Dataset):
             keypoints_openpose = self.data['openpose']
         except KeyError:
             keypoints_openpose = np.zeros((len(self.imgname), 25, 3))
-        self.keypoints = np.concatenate([keypoints_openpose, keypoints_gt], axis=1)
+        self.keypoints = np.concatenate(
+            [keypoints_openpose, keypoints_gt], axis=1)
 
         # Get gender data, if available
         try:
             gender = self.data['gender']
-            self.gender = np.array([0 if str(g) == 'm' else 1 for g in gender]).astype(np.int32)
+            self.gender = np.array(
+                [0 if str(g) == 'm' else 1 for g in gender]).astype(np.int32)
         except KeyError:
             self.gender = -1*np.ones(len(self.imgname)).astype(np.int32)
 
@@ -147,7 +153,8 @@ class BaseDataset(Dataset):
                     logger.info(f'Found {len(self.occluders["obj_class"])} suitable '
                                 f'objects from {self.options.OCC_AUG_DATASET} dataset')
                 elif self.options.OCC_AUG_DATASET == 'pascal':
-                    self.occluders = load_pascal_occluders(pascal_voc_root_path=config.PASCAL_ROOT)
+                    self.occluders = load_pascal_occluders(
+                        pascal_voc_root_path=config.PASCAL_ROOT)
                     logger.info(f'Found {len(self.occluders)} suitable '
                                 f'objects from {self.options.OCC_AUG_DATASET} dataset')
             else:
@@ -160,7 +167,8 @@ class BaseDataset(Dataset):
                 else constants.H36M_TO_J14
             self.joint_mapper_gt = constants.J24_TO_J17 if dataset == 'mpi-inf-3dhp' \
                 else constants.J24_TO_J14
-            self.J_regressor = torch.from_numpy(np.load(config.JOINT_REGRESSOR_H36M)).float()
+            self.J_regressor = torch.from_numpy(
+                np.load(config.JOINT_REGRESSOR_H36M)).float()
 
             self.smpl = SMPL(
                 config.SMPL_MODEL_DIR,
@@ -176,7 +184,8 @@ class BaseDataset(Dataset):
                                     create_transl=False)
 
         self.length = self.scale.shape[0]
-        logger.info(f'Loaded {self.dataset} dataset, num samples {self.length}')
+        logger.info(
+            f'Loaded {self.dataset} dataset, num samples {self.length}')
 
     def augm_params(self):
         """Get augmentation parameters."""
@@ -188,30 +197,31 @@ class BaseDataset(Dataset):
             # We flip with probability 1/2
             if np.random.uniform() <= self.options.FLIP_PROB:
                 flip = 1
-            
-            # Each channel is multiplied with a number 
+
+            # Each channel is multiplied with a number
             # in the area [1-opt.noiseFactor,1+opt.noiseFactor]
-            pn = np.random.uniform(1-self.options.NOISE_FACTOR, 1+self.options.NOISE_FACTOR, 3)
-            
+            pn = np.random.uniform(
+                1-self.options.NOISE_FACTOR, 1+self.options.NOISE_FACTOR, 3)
+
             # The rotation is a number in the area [-2*rotFactor, 2*rotFactor]
             rot = min(2*self.options.ROT_FACTOR,
-                    max(-2*self.options.ROT_FACTOR, np.random.randn()*self.options.ROT_FACTOR))
-            
+                      max(-2*self.options.ROT_FACTOR, np.random.randn()*self.options.ROT_FACTOR))
+
             # The scale is multiplied with a number
             # in the area [1-scaleFactor,1+scaleFactor]
             sc = min(1+self.options.SCALE_FACTOR,
-                    max(1-self.options.SCALE_FACTOR, np.random.randn()*self.options.SCALE_FACTOR+1))
+                     max(1-self.options.SCALE_FACTOR, np.random.randn()*self.options.SCALE_FACTOR+1))
             # but it is zero with probability 3/5
             if np.random.uniform() <= 0.6:
                 rot = 0
-        
+
         return flip, pn, rot, sc
 
     def rgb_processing(self, rgb_img, center, scale, rot, flip, pn, img_res, kp2d=None):
         """Process rgb image and do augmentation."""
         rgb_img = crop(rgb_img, center, scale,
                        [img_res, img_res], rot=rot)
-        # flip the image 
+        # flip the image
         if flip:
             rgb_img = flip_img(rgb_img)
 
@@ -222,7 +232,7 @@ class BaseDataset(Dataset):
             elif self.options.OCC_AUG_DATASET == 'pascal':
                 rgb_img = occlude_with_pascal_objects(rgb_img, self.occluders)
 
-        if self.is_train: # and not self.dataset in ['ochuman', 'crowdpose']:
+        if self.is_train:  # and not self.dataset in ['ochuman', 'crowdpose']:
             # if not self.dataset in ['ochuman', 'crowdpose']:
             #     if time.localtime().tm_mday > 28 and time.localtime().tm_mday >=10:
             #         raise ValueError('remove ochuman, crowdpose exception from the base dataset!!!')
@@ -230,21 +240,24 @@ class BaseDataset(Dataset):
             rgb_img = albumentation_aug(image=rgb_img)['image']
 
         # in the rgb image we add pixel noise in a channel-wise manner
-        rgb_img[:,:,0] = np.minimum(255.0, np.maximum(0.0, rgb_img[:,:,0]*pn[0]))
-        rgb_img[:,:,1] = np.minimum(255.0, np.maximum(0.0, rgb_img[:,:,1]*pn[1]))
-        rgb_img[:,:,2] = np.minimum(255.0, np.maximum(0.0, rgb_img[:,:,2]*pn[2]))
+        rgb_img[:, :, 0] = np.minimum(
+            255.0, np.maximum(0.0, rgb_img[:, :, 0]*pn[0]))
+        rgb_img[:, :, 1] = np.minimum(
+            255.0, np.maximum(0.0, rgb_img[:, :, 1]*pn[1]))
+        rgb_img[:, :, 2] = np.minimum(
+            255.0, np.maximum(0.0, rgb_img[:, :, 2]*pn[2]))
         # (3,224,224),float,[0,1]
-        rgb_img = np.transpose(rgb_img.astype('float32'),(2,0,1))/255.0
+        rgb_img = np.transpose(rgb_img.astype('float32'), (2, 0, 1))/255.0
         return rgb_img
 
     def j2d_processing(self, kp, center, scale, r, f):
         """Process gt 2D keypoints and apply all augmentation transforms."""
         nparts = kp.shape[0]
         for i in range(nparts):
-            kp[i,0:2] = transform(kp[i,0:2] + 1, center, scale,
-                                  [self.options.IMG_RES, self.options.IMG_RES], rot=r)
+            kp[i, 0:2] = transform(kp[i, 0:2] + 1, center, scale,
+                                   [self.options.IMG_RES, self.options.IMG_RES], rot=r)
         # convert to normalized coordinates
-        kp[:,:-1] = 2. * kp[:,:-1] / self.options.IMG_RES - 1.
+        kp[:, :-1] = 2. * kp[:, :-1] / self.options.IMG_RES - 1.
         # flip the x coordinates
         if f:
             kp = flip_kp(kp)
@@ -257,10 +270,10 @@ class BaseDataset(Dataset):
         rot_mat = np.eye(3)
         if not r == 0:
             rot_rad = -r * np.pi / 180
-            sn,cs = np.sin(rot_rad), np.cos(rot_rad)
-            rot_mat[0,:2] = [cs, -sn]
-            rot_mat[1,:2] = [sn, cs]
-        S[:, :-1] = np.einsum('ij,kj->ki', rot_mat, S[:, :-1]) 
+            sn, cs = np.sin(rot_rad), np.cos(rot_rad)
+            rot_mat[0, :2] = [cs, -sn]
+            rot_mat[1, :2] = [sn, cs]
+        S[:, :-1] = np.einsum('ij,kj->ki', rot_mat, S[:, :-1])
         # flip the x coordinates
         if f:
             S = flip_kp(S)
@@ -295,7 +308,8 @@ class BaseDataset(Dataset):
         # apply crop augmentation
         if self.is_train and self.options.CROP_FACTOR > 0:
             if np.random.rand() < self.options.CROP_PROB:
-                center, scale = random_crop(center, scale, crop_scale_factor=1-self.options.CROP_FACTOR, axis='y')
+                center, scale = random_crop(
+                    center, scale, crop_scale_factor=1-self.options.CROP_FACTOR, axis='y')
 
         load_start = time.perf_counter()
         # Load image
@@ -330,7 +344,8 @@ class BaseDataset(Dataset):
             pose = pose.numpy()
 
         # Get 2D keypoints and apply augmentation transforms
-        keypoints = self.j2d_processing(keypoints, center, sc * scale, rot, flip)
+        keypoints = self.j2d_processing(
+            keypoints, center, sc * scale, rot, flip)
 
         proc_start = time.perf_counter()
 
@@ -352,7 +367,8 @@ class BaseDataset(Dataset):
         # item['orig_img'] = torch.from_numpy(np.transpose(cv_img.astype('float32'),(2,0,1)) / 255.0)
         # Store image before normalization to use it in visualization
         item['img'] = self.normalize_img(img)
-        item['pose'] = torch.from_numpy(self.pose_processing(pose, rot, flip)).float()
+        item['pose'] = torch.from_numpy(
+            self.pose_processing(pose, rot, flip)).float()
         item['betas'] = torch.from_numpy(betas).float()
         item['imgname'] = imgname
 
@@ -369,22 +385,24 @@ class BaseDataset(Dataset):
             S = self.pose_3d[index].copy()
 
             if self.dataset in ['agora-cam-v2', 'coco-cam-camreg', 'coco-campose-camreg'] and self.is_train:
-                S[:,:3] = (self.cam_rotmat[index] @ S[:,:3].T).T
+                S[:, :3] = (self.cam_rotmat[index] @ S[:, :3].T).T
 
-            item['pose_3d'] = torch.from_numpy(self.j3d_processing(S, rot, flip)).float()
+            item['pose_3d'] = torch.from_numpy(
+                self.j3d_processing(S, rot, flip)).float()
             if self.options.USE_3D_CONF and self.dataset in ['mpii', 'coco', 'lspet']:
                 # copy the confidences of 2d keypoints to 3d joints
                 for src, dst in kp_utils.relation_among_spin_joints():
                     if len(src) < 1:
-                        conf = keypoints[dst,2]
+                        conf = keypoints[dst, 2]
                     else:
                         # relations + itself
-                        conf = max([keypoints[x,2] for x in src] + [keypoints[dst,2]])
+                        conf = max([keypoints[x, 2]
+                                   for x in src] + [keypoints[dst, 2]])
                     # logger.debug(conf.shape)
                     # subtract 25 to use only gt joints of SPIN
                     item['pose_3d'][dst-25, -1] = conf.astype('float')
         else:
-            item['pose_3d'] = torch.zeros(24,4, dtype=torch.float32)
+            item['pose_3d'] = torch.zeros(24, 4, dtype=torch.float32)
 
         if self.options.NONPARAMETRIC:
             # get the nonparametric joints to train PARE
@@ -432,9 +450,10 @@ class BaseDataset(Dataset):
                     body_pose=item['pose'].unsqueeze(0)[:, 3:],
                     betas=item['betas'].unsqueeze(0),
                 ).joints[0, 25:].cpu().numpy()
-            j3d -= np.array(j3d[2] + j3d[3]) / 2. # root center
+            j3d -= np.array(j3d[2] + j3d[3]) / 2.  # root center
             S = np.hstack([j3d, np.ones([24, 1])])
-            item['pose_3d'] = torch.from_numpy(self.j3d_processing(S, rot, flip)).float()
+            item['pose_3d'] = torch.from_numpy(
+                self.j3d_processing(S, rot, flip)).float()
 
         if not self.is_train:
             if self.dataset in EVAL_MESH_DATASETS:

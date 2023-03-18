@@ -24,20 +24,25 @@ def show_3d_pose(kp_3d, dataset='common', radius=1, ax=None):
     skeleton = eval(f'kp_utils.get_{dataset}_skeleton')()
     for i, (j1, j2) in enumerate(skeleton):
         if kp_3d[j1].shape[0] == 4:
-            x, y, z, v = [np.array([kp_3d[j1, c], kp_3d[j2, c]]) for c in range(4)]
+            x, y, z, v = [np.array([kp_3d[j1, c], kp_3d[j2, c]])
+                          for c in range(4)]
         else:
-            x, y, z = [np.array([kp_3d[j1, c], kp_3d[j2, c]]) for c in range(3)]
+            x, y, z = [np.array([kp_3d[j1, c], kp_3d[j2, c]])
+                       for c in range(3)]
             v = [1, 1]
         ax.plot(x, y, z, lw=2, c=get_colors()['purple'] / 255)
         for j in range(2):
-            if v[j] > 0: # if visible
-                ax.plot(x[j], y[j], z[j], lw=2, c=get_colors()['blue'] / 255, marker='o')
-            else: # nonvisible
-                ax.plot(x[j], y[j], z[j], lw=2, c=get_colors()['red'] / 255, marker='x')
+            if v[j] > 0:  # if visible
+                ax.plot(x[j], y[j], z[j], lw=2, c=get_colors()
+                        ['blue'] / 255, marker='o')
+            else:  # nonvisible
+                ax.plot(x[j], y[j], z[j], lw=2, c=get_colors()
+                        ['red'] / 255, marker='x')
 
     hip_joint = 2
     RADIUS = radius  # space around the subject
-    xroot, yroot, zroot = kp_3d[hip_joint, 0], kp_3d[hip_joint, 1], kp_3d[hip_joint, 2]
+    xroot, yroot, zroot = kp_3d[hip_joint,
+                                0], kp_3d[hip_joint, 1], kp_3d[hip_joint, 2]
     ax.set_xlim3d([-RADIUS + xroot, RADIUS + xroot])
     ax.set_zlim3d([-RADIUS + zroot, RADIUS + zroot])
     ax.set_ylim3d([-RADIUS + yroot, RADIUS + yroot])
@@ -59,16 +64,17 @@ def draw_skeleton(image, kp_2d, dataset='common', unnormalize=True,
         image = np.asarray(image, dtype=np.uint8)
 
     if unnormalize:
-        kp_2d[:,:2] = 0.5 * res * (kp_2d[:, :2] + 1) # normalize_2d_kp(kp_2d[:,:2], 224, inv=True)
+        # normalize_2d_kp(kp_2d[:,:2], 224, inv=True)
+        kp_2d[:, :2] = 0.5 * res * (kp_2d[:, :2] + 1)
 
     kp_2d = np.hstack([kp_2d, np.ones((kp_2d.shape[0], 1))])
 
-    kp_2d[:,2] = kp_2d[:,2] > 0.3
+    kp_2d[:, 2] = kp_2d[:, 2] > 0.3
     kp_2d = np.array(kp_2d, dtype=int)
 
-    rcolor = [255,0,0]
-    pcolor = [0,255,0]
-    lcolor = [0,0,255]
+    rcolor = [255, 0, 0]
+    pcolor = [0, 255, 0]
+    lcolor = [0, 0, 255]
 
     skeleton = eval(f'kp_utils.get_{dataset}_skeleton')()
     joint_names = eval(f'kp_utils.get_{dataset}_joint_names')()
@@ -84,7 +90,8 @@ def draw_skeleton(image, kp_2d, dataset='common', unnormalize=True,
         # if pt[2] > 0: # if visible
         cv2.circle(image, (pt[0], pt[1]), 4, pcolor, -1)
         if j_error is not None:
-            cv2.putText(image, f'{j_error[idx]:.1f}', (pt[0]+3, pt[1]-3), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0))
+            cv2.putText(image, f'{j_error[idx]:.1f}', (pt[0]+3,
+                        pt[1]-3), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0))
 
         if j_uncertainty is not None:
             cv2.putText(image, f'{j_uncertainty[idx]:.6f}',
@@ -94,14 +101,15 @@ def draw_skeleton(image, kp_2d, dataset='common', unnormalize=True,
             cv2.putText(image, f'{idx}-{joint_names[idx]}',
                         (pt[0]+3, pt[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0))
 
-    for i,(j1,j2) in enumerate(skeleton):
+    for i, (j1, j2) in enumerate(skeleton):
         # if kp_2d[j1, 2] > 0 and kp_2d[j2, 2] > 0: # if visible
         # if dataset == 'common':
         #     color = rcolor if common_lr[i] == 0 else lcolor
         # else:
         color = lcolor if i % 2 == 0 else rcolor
         if kp_2d[j1, 2] > 0 and kp_2d[j2, 2] > 0:
-            pt1, pt2 = (kp_2d[j1, 0], kp_2d[j1, 1]), (kp_2d[j2, 0], kp_2d[j2, 1])
+            pt1, pt2 = (kp_2d[j1, 0], kp_2d[j1, 1]
+                        ), (kp_2d[j2, 0], kp_2d[j2, 1])
             cv2.line(image, pt1=pt1, pt2=pt2, color=color, thickness=thickness)
 
     image = np.asarray(image, dtype=float) / 255.
@@ -143,7 +151,7 @@ def get_colors():
 def get_segmentation_color_map():
     mycmap = np.array([
         # [0.45,   0.5470, 0.6410],
-        [0.0,    0.0,    0.0   ],
+        [0.0,    0.0,    0.0],
         [0.8500, 0.3250, 0.0980],
         [0.9290, 0.6940, 0.1250],
         [0.4940, 0.1840, 0.3560],
@@ -171,7 +179,7 @@ def get_segmentation_color_map():
         # [0.6206, 0.2239, 0.3094],
     ])
 
-    return mycmap # (mycmap * 255).astype(np.uint8)
+    return mycmap  # (mycmap * 255).astype(np.uint8)
 
 
 def color_vertices(per_joint_label, alpha=1.0):
@@ -206,12 +214,13 @@ def color_vertices_batch(per_joint_label, alpha=1.0):
 def visualize_joint_error(j_error=None, res=480):
     smpl = SMPL(
         model_path=SMPL_MODEL_DIR,
-        global_orient=torch.from_numpy(np.array([[np.pi,0,0]])).float()
+        global_orient=torch.from_numpy(np.array([[np.pi, 0, 0]])).float()
     )
     joints = smpl().joints
-    joints2d = joints[:,:,:2]
-    joints2d -= (joints2d[:,27,:] + joints2d[:,28,:]) / 2
-    joints2d = torch.cat([joints2d, torch.ones(1, joints2d.shape[1], 1)], dim=-1)
+    joints2d = joints[:, :, :2]
+    joints2d -= (joints2d[:, 27, :] + joints2d[:, 28, :]) / 2
+    joints2d = torch.cat(
+        [joints2d, torch.ones(1, joints2d.shape[1], 1)], dim=-1)
     joints2d = joints2d[0, 25:39, :].detach().numpy()
 
     image = np.ones((res, res, 3)) * 255
@@ -256,18 +265,20 @@ def visualize_smpl_joint_names():
     from smplx import SMPL
     smpl = SMPL(
         model_path=SMPL_MODEL_DIR,
-        global_orient=torch.from_numpy(np.array([[np.pi,0,0]])).float()
+        global_orient=torch.from_numpy(np.array([[np.pi, 0, 0]])).float()
     )
     joints = smpl().joints
-    joints2d = joints[:,:,:2]
+    joints2d = joints[:, :, :2]
     # joints2d -= (joints2d[:,27,:] + joints2d[:,28,:]) / 2
-    joints2d = torch.cat([joints2d, torch.ones(1, joints2d.shape[1], 1)], dim=-1)
+    joints2d = torch.cat(
+        [joints2d, torch.ones(1, joints2d.shape[1], 1)], dim=-1)
     joints2d = joints2d[0, :24, :].detach().numpy() * 1.15
 
     res = 1080
 
     image = np.ones((res, res, 3)) * 255
-    image = draw_skeleton(image, kp_2d=joints2d, res=res, dataset='smpl', print_joints=True)
+    image = draw_skeleton(image, kp_2d=joints2d, res=res,
+                          dataset='smpl', print_joints=True)
     plt.axis('off')
     plt.imshow(image)
     plt.show()
@@ -285,7 +296,7 @@ def visualize_heatmaps(image, heatmaps, alpha=0.4):
     hm = tr.resize(heatmaps, (height, width), anti_aliasing=False)
     cm = mpl_cm.get_cmap('jet')
     norm_gt = mpl_colors.Normalize()
-    hm = cm(norm_gt(hm))[:,:,0,:3]
+    hm = cm(norm_gt(hm))[:, :, 0, :3]
 
     hm_img = image * (1 - alpha) + (hm * alpha)
     return hm_img

@@ -51,7 +51,8 @@ def run_mmpose_with_dets(image_file_names, detections, show_results=False, resul
         person_bboxes = dets[img_idx]
         person_bboxes[:, 0] = person_bboxes[:, 0] - (person_bboxes[:, 2] // 2)
         person_bboxes[:, 1] = person_bboxes[:, 1] - (person_bboxes[:, 3] // 2)
-        person_bboxes = np.concatenate([person_bboxes, np.ones((person_bboxes.shape[0], 1))], axis=-1)
+        person_bboxes = np.concatenate(
+            [person_bboxes, np.ones((person_bboxes.shape[0], 1))], axis=-1)
 
         # test a single image, with a list of bboxes.
         pose_results = inference_top_down_pose_model(
@@ -70,7 +71,8 @@ def run_mmpose_with_dets(image_file_names, detections, show_results=False, resul
             dataset=dataset,
             kpt_score_thr=kpt_thr,
             show=show_results,
-            out_file=None if results_folder else os.path.join(results_folder, img_fname.split('/')[-1]),
+            out_file=None if results_folder else os.path.join(
+                results_folder, img_fname.split('/')[-1]),
         )
 
         if len(pose_results) < 1:
@@ -83,11 +85,9 @@ def run_mmpose_with_dets(image_file_names, detections, show_results=False, resul
 
 def run_mmpose(image_folder, show_results=False):
 
-
     device = 'cuda:0'
     bbox_thr = 0.3
     kpt_thr = 0.3
-
 
     det_model = init_detector(MMDET_CFG, MMDET_CKPT, device=device)
     # build the pose model from a config file and a checkpoint file
@@ -136,4 +136,3 @@ def run_mmpose(image_folder, show_results=False):
             joints2d.append(pose_results[0]['keypoints'])
 
     return np.array(joints2d)
-

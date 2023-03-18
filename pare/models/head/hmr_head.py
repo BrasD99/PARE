@@ -48,9 +48,9 @@ class HMRHead(nn.Module):
         self.use_cam_feats = use_cam_feats
 
         if use_cam_feats:
-            num_input_features += 7 # 6d rotmat + vfov
+            num_input_features += 7  # 6d rotmat + vfov
 
-        self.avgpool = nn.AdaptiveAvgPool2d(1) # nn.AvgPool2d(7, stride=1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)  # nn.AvgPool2d(7, stride=1)
         self.fc1 = nn.Linear(num_input_features + npose + 13, 1024)
         self.drop1 = nn.Dropout()
         self.fc2 = nn.Linear(1024, 1024)
@@ -94,7 +94,8 @@ class HMRHead(nn.Module):
 
         mean_params = np.load(smpl_mean_params)
         init_pose = torch.from_numpy(mean_params['pose'][:]).unsqueeze(0)
-        init_shape = torch.from_numpy(mean_params['shape'][:].astype('float32')).unsqueeze(0)
+        init_shape = torch.from_numpy(
+            mean_params['shape'][:].astype('float32')).unsqueeze(0)
         init_cam = torch.from_numpy(mean_params['cam']).unsqueeze(0)
         self.register_buffer('init_pose', init_pose)
         self.register_buffer('init_shape', init_shape)
@@ -162,21 +163,23 @@ class HMRHead(nn.Module):
             xc = self.fc2(xc)
             xc = self.drop2(xc)
             if self.estimate_var:
-                pred_pose = self.decpose(xc)[:,:self.npose] + pred_pose
-                pred_shape = self.decshape(xc)[:,:10] + pred_shape
+                pred_pose = self.decpose(xc)[:, :self.npose] + pred_pose
+                pred_shape = self.decshape(xc)[:, :10] + pred_shape
                 pred_cam = self.deccam(xc) + pred_cam
 
                 if self.use_separate_var_branch:
                     pred_pose_var = self.decpose_var(xc)
                     pred_shape_var = self.decshape_var(xc)
                 else:
-                    pred_pose_var = self.decpose(xc)[:,self.npose:]
-                    pred_shape_var = self.decshape(xc)[:,10:]
+                    pred_pose_var = self.decpose(xc)[:, self.npose:]
+                    pred_shape_var = self.decshape(xc)[:, 10:]
 
                 if self.uncertainty_activation != '':
                     # Use an activation layer to output uncertainty
-                    pred_pose_var = eval(f'F.{self.uncertainty_activation}')(pred_pose_var)
-                    pred_shape_var = eval(f'F.{self.uncertainty_activation}')(pred_shape_var)
+                    pred_pose_var = eval(
+                        f'F.{self.uncertainty_activation}')(pred_pose_var)
+                    pred_shape_var = eval(
+                        f'F.{self.uncertainty_activation}')(pred_shape_var)
             else:
                 pred_pose = self.decpose(xc) + pred_pose
                 pred_shape = self.decshape(xc) + pred_shape
@@ -198,6 +201,7 @@ class HMRHead(nn.Module):
             })
 
         return output
+
 
 def keep_variance(x, min_variance):
     return x + min_variance

@@ -16,6 +16,7 @@
 
 import torch
 
+
 def interpolate(feat, uv):
     '''
 
@@ -31,5 +32,6 @@ def interpolate(feat, uv):
     if int(torch.__version__.split('.')[1]) < 4:
         samples = torch.nn.functional.grid_sample(feat, uv)  # [B, C, N, 1]
     else:
-        samples = torch.nn.functional.grid_sample(feat, uv, align_corners=True)  # [B, C, N, 1]
+        samples = torch.nn.functional.grid_sample(
+            feat, uv, align_corners=True)  # [B, C, N, 1]
     return samples[:, :, :, 0]  # [B, C, N]

@@ -131,7 +131,6 @@ if __name__ == '__main__':
     out = net(img)
     print(out.size())
 
-
     # for (sub_sample_, bn_layer_) in [(True, True), (False, False), (True, False), (False, True)]:
     #     img = torch.zeros(2, 256, 24)
     #     net = NONLocalBlock1D(256, inter_channels=24, sub_sample=sub_sample_, bn_layer=bn_layer_)
@@ -147,6 +146,3 @@ if __name__ == '__main__':
     #     net = NONLocalBlock3D(3, sub_sample=sub_sample_, bn_layer=bn_layer_)
     #     out = net(img)
     #     print(out.size())
-
-
-

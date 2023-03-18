@@ -14,6 +14,12 @@
 #
 # Contact: ps-license@tuebingen.mpg.de
 
+from .vis_utils import get_colors
+from torchvision.utils import make_grid
+import numpy as np
+import pyrender
+import trimesh
+import torch
 import os
 
 from .vis_utils import draw_skeleton, visualize_joint_error, visualize_joint_uncertainty, \
@@ -23,19 +29,13 @@ os.environ['PYOPENGL_PLATFORM'] = 'egl'
 # os.environ['EGL_DEVICE_ID'] = os.environ['GPU_DEVICE_ORDINAL'].split(',')[0] \
 #     if 'GPU_DEVICE_ORDINAL' in os.environ.keys() else '0'
 
-import torch
-import trimesh
-import pyrender
-import numpy as np
-from torchvision.utils import make_grid
-from .vis_utils import get_colors
-
 
 class Renderer:
     """
     Renderer used for visualizing the SMPL model
     Code adapted from https://github.com/vchoutas/smplify-x
     """
+
     def __init__(self, focal_length=5000, img_res=224, faces=None, mesh_color='pink'):
         self.renderer = pyrender.OffscreenRenderer(
             viewport_width=img_res,
@@ -93,7 +93,7 @@ class Renderer:
             camera_rotation = camera_rotation.cpu().numpy()
 
         images = images.cpu()
-        images_np = np.transpose(images.numpy(), (0,2,3,1))
+        images_np = np.transpose(images.numpy(), (0, 2, 3, 1))
 
         if extra_img is not None:
             extra_img = extra_img.cpu()
@@ -118,7 +118,7 @@ class Renderer:
                     focal_length=None if focal_length is None else focal_length[i],
                     cam_center=None if cam_center is None else cam_center[i],
                     mesh_filename=mesh_filename,
-                ), (2,0,1))
+                ), (2, 0, 1))
             ).float()
 
             if extra_img is not None:
@@ -133,12 +133,15 @@ class Renderer:
                     images_np[i].copy(), kp_2d=kp_2d[i],
                     dataset=skeleton_type, res=self.camera_center[0]*2, unnormalize=unnormalize_keypoints
                 )
-                kp_img = torch.from_numpy(np.transpose(kp_img, (2,0,1))).float()
+                kp_img = torch.from_numpy(
+                    np.transpose(kp_img, (2, 0, 1))).float()
                 rend_imgs.append(kp_img)
 
             if heatmaps is not None:
-                hm_img = visualize_heatmaps(images_np[i].copy(), heatmaps=heatmaps[i], alpha=0.4)
-                hm_img = torch.from_numpy(np.transpose(hm_img, (2, 0, 1))).float()
+                hm_img = visualize_heatmaps(
+                    images_np[i].copy(), heatmaps=heatmaps[i], alpha=0.4)
+                hm_img = torch.from_numpy(
+                    np.transpose(hm_img, (2, 0, 1))).float()
                 rend_imgs.append(hm_img)
 
             if sideview:
@@ -154,12 +157,14 @@ class Renderer:
                                     joint_labels=None if joint_labels is None else joint_labels[i],
                                     alpha=alpha,
                                     sideview=True,
-                                    camera_rotation=None if camera_rotation is None else camera_rotation[i],
+                                    camera_rotation=None if camera_rotation is None else camera_rotation[
+                                        i],
                                     focal_length=None if focal_length is None else focal_length[i],
                                     cam_center=None if cam_center is None else cam_center[i],
                                     sideview_angle=angle,
-                                    mesh_filename=mesh_filename.replace('.obj', f'_{angle:03d}_rot.obj')
-                                                  if mesh_filename else None
+                                    mesh_filename=mesh_filename.replace(
+                                        '.obj', f'_{angle:03d}_rot.obj')
+                                    if mesh_filename else None
                                 ),
                                 (2, 0, 1)
                             )
@@ -177,26 +182,32 @@ class Renderer:
                                 joint_labels=None if joint_labels is None else joint_labels[i],
                                 alpha=alpha,
                                 sideview=True,
-                                camera_rotation=None if camera_rotation is None else camera_rotation[i],
+                                camera_rotation=None if camera_rotation is None else camera_rotation[
+                                    i],
                                 focal_length=None if focal_length is None else focal_length[i],
                                 cam_center=None if cam_center is None else cam_center[i],
-                                mesh_filename=mesh_filename.replace('.obj', f'_270_rot.obj')
+                                mesh_filename=mesh_filename.replace(
+                                    '.obj', f'_270_rot.obj')
                                 if mesh_filename else None
                             ),
-                            (2,0,1)
+                            (2, 0, 1)
                         )
                     ).float()
                     rend_imgs.append(side_img)
                     num_sideview += 1
 
             if joint_labels is not None:
-                error_image = visualize_joint_error(joint_labels[i], res=self.camera_center[0]*2)
-                error_image = torch.from_numpy(np.transpose(error_image, (2, 0, 1))).float()
+                error_image = visualize_joint_error(
+                    joint_labels[i], res=self.camera_center[0]*2)
+                error_image = torch.from_numpy(
+                    np.transpose(error_image, (2, 0, 1))).float()
                 rend_imgs.append(error_image)
 
             if joint_uncertainty is not None:
-                error_image = visualize_joint_uncertainty(joint_uncertainty[i], res=self.camera_center[0]*2)
-                error_image = torch.from_numpy(np.transpose(error_image, (2, 0, 1))).float()
+                error_image = visualize_joint_uncertainty(
+                    joint_uncertainty[i], res=self.camera_center[0]*2)
+                error_image = torch.from_numpy(
+                    np.transpose(error_image, (2, 0, 1))).float()
                 rend_imgs.append(error_image)
 
         nrow = len(rend_imgs) // nb_max_img
@@ -227,9 +238,11 @@ class Renderer:
             mesh = mesh_inp
         else:
             if vertex_colors is not None:
-                mesh = trimesh.Trimesh(vertices, self.faces, vertex_colors=vertex_colors, process=False)
+                mesh = trimesh.Trimesh(
+                    vertices, self.faces, vertex_colors=vertex_colors, process=False)
             else:
-                mesh = trimesh.Trimesh(vertices, self.faces, vertex_colors=vertex_colors, process=False)
+                mesh = trimesh.Trimesh(
+                    vertices, self.faces, vertex_colors=vertex_colors, process=False)
 
         rot = trimesh.transformations.rotation_matrix(
             np.radians(180), [1, 0, 0])
@@ -248,7 +261,8 @@ class Renderer:
         if mesh_filename:
             mesh.export(mesh_filename)
             if not mesh_filename.endswith('_rot.obj'):
-                np.save(mesh_filename.replace('.obj', '.npy'), camera_translation)
+                np.save(mesh_filename.replace(
+                    '.obj', '.npy'), camera_translation)
 
         if vertex_colors is not None:
             mesh = pyrender.Mesh.from_trimesh(mesh)
@@ -267,7 +281,6 @@ class Renderer:
         else:
             camera_pose[:3, 3] = camera_translation
 
-
         if focal_length is None:
             camera = pyrender.IntrinsicsCamera(fx=self.focal_length, fy=self.focal_length,
                                                cx=self.camera_center[0], cy=self.camera_center[1])
@@ -278,7 +291,6 @@ class Renderer:
             camera = pyrender.IntrinsicsCamera(fx=focal_length[0], fy=focal_length[1],
                                                cx=cam_center[1], cy=cam_center[0])
         scene.add(camera, pose=camera_pose)
-
 
         light = pyrender.DirectionalLight(color=[1.0, 1.0, 1.0], intensity=1)
         light_pose = np.eye(4)
@@ -296,11 +308,12 @@ class Renderer:
         #     for joint, err in joint_labels.items():
         #         add_joints(scene, joints=joint, radius=err)
 
-        color, rend_depth = self.renderer.render(scene, flags=pyrender.RenderFlags.RGBA)
+        color, rend_depth = self.renderer.render(
+            scene, flags=pyrender.RenderFlags.RGBA)
         color = color.astype(np.float32) / 255.0
-        valid_mask = (rend_depth > 0)[:,:,None]
+        valid_mask = (rend_depth > 0)[:, :, None]
         output_img = (color[:, :, :3] * valid_mask +
-                  (1 - valid_mask) * image)
+                      (1 - valid_mask) * image)
         return output_img
 
 

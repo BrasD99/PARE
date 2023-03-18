@@ -47,8 +47,9 @@ class PareHead(nn.Module):
             iterative_regression=False,
             iter_residual=False,
             num_iterations=3,
-            shape_input_type='feats', # 'feats.pose.shape.cam'
-            pose_input_type='feats', # 'feats.neighbor_pose_feats.all_pose.self_pose.neighbor_pose.shape.cam'
+            shape_input_type='feats',  # 'feats.pose.shape.cam'
+            # 'feats.neighbor_pose_feats.all_pose.self_pose.neighbor_pose.shape.cam'
+            pose_input_type='feats',
             pose_mlp_num_layers=1,
             shape_mlp_num_layers=1,
             pose_mlp_hidden_size=256,
@@ -59,15 +60,17 @@ class PareHead(nn.Module):
             use_postconv_keypoint_attention=False,
             keypoint_attention_act='softmax',
             use_scale_keypoint_attention=False,
-            use_branch_nonlocal=None, # 'concatenation', 'dot_product', 'embedded_gaussian', 'gaussian'
-            use_final_nonlocal=None, # 'concatenation', 'dot_product', 'embedded_gaussian', 'gaussian'
+            # 'concatenation', 'dot_product', 'embedded_gaussian', 'gaussian'
+            use_branch_nonlocal=None,
+            # 'concatenation', 'dot_product', 'embedded_gaussian', 'gaussian'
+            use_final_nonlocal=None,
             backbone='resnet',
             use_hmr_regression=False,
             use_coattention=False,
             num_coattention_iter=1,
-            coattention_conv='simple', # 'double_1', 'double_3', 'single_1', 'single_3', 'simple'
+            coattention_conv='simple',  # 'double_1', 'double_3', 'single_1', 'single_3', 'simple'
             use_upsampling=False,
-            use_soft_attention=False, # Stefan & Otmar 3DV style attention
+            use_soft_attention=False,  # Stefan & Otmar 3DV style attention
             num_branch_iteration=0,
             branch_deeper=False,
             use_resnet_conv_hrnet=False,
@@ -109,27 +112,33 @@ class PareHead(nn.Module):
             self.use_keypoint_features_for_smpl_regression = True
             self.use_hmr_regression = True
             self.use_coattention = False
-            logger.warning('Coattention cannot be used together with soft attention')
+            logger.warning(
+                'Coattention cannot be used together with soft attention')
             logger.warning('Overriding use_coattention=False')
 
         if use_coattention:
             self.use_keypoint_features_for_smpl_regression = False
-            logger.warning('\"use_keypoint_features_for_smpl_regression\" cannot be used together with co-attention')
-            logger.warning('Overriding \"use_keypoint_features_for_smpl_regression\"=False')
+            logger.warning(
+                '\"use_keypoint_features_for_smpl_regression\" cannot be used together with co-attention')
+            logger.warning(
+                'Overriding \"use_keypoint_features_for_smpl_regression\"=False')
 
         if use_hmr_regression:
             self.iterative_regression = False
-            logger.warning('iterative_regression cannot be used together with hmr regression')
+            logger.warning(
+                'iterative_regression cannot be used together with hmr regression')
 
         if self.use_heatmaps in ['part_segm', 'attention']:
-            logger.info('\"Keypoint Attention\" should be activated to be able to use part segmentation')
+            logger.info(
+                '\"Keypoint Attention\" should be activated to be able to use part segmentation')
             logger.info('Overriding use_keypoint_attention')
             self.use_keypoint_attention = True
 
         assert num_iterations > 0, '\"num_iterations\" should be greater than 0.'
 
         if use_position_encodings:
-            assert backbone.startswith('hrnet'), 'backbone should be hrnet to use position encodings'
+            assert backbone.startswith(
+                'hrnet'), 'backbone should be hrnet to use position encodings'
             # self.pos_enc = get_coord_maps(size=56)
             self.register_buffer('pos_enc', get_coord_maps(size=56))
             num_input_features += 2
@@ -137,7 +146,8 @@ class PareHead(nn.Module):
 
         if backbone.startswith('hrnet'):
             if use_resnet_conv_hrnet:
-                logger.info('Using resnet block for keypoint and smpl conv layers...')
+                logger.info(
+                    'Using resnet block for keypoint and smpl conv layers...')
                 self.keypoint_deconv_layers = self._make_res_conv_layers(
                     input_channels=self.num_input_features,
                     num_channels=num_deconv_filters[-1],
@@ -167,7 +177,8 @@ class PareHead(nn.Module):
             conv_fn = self._make_upsample_layer if use_upsampling else self._make_deconv_layer
 
             if use_upsampling:
-                logger.info('Upsampling is active to increase spatial dimension')
+                logger.info(
+                    'Upsampling is active to increase spatial dimension')
                 logger.info(f'Upsampling conv kernels: {num_deconv_kernels}')
 
             self.keypoint_deconv_layers = conv_fn(
@@ -193,10 +204,12 @@ class PareHead(nn.Module):
                 conv3x3(num_deconv_filters[-1], 256),
                 nn.BatchNorm2d(256),
                 nn.ReLU(inplace=True),
-                conv1x1(256, num_joints+1 if self.use_heatmaps in ('part_segm', 'part_segm_pool') else num_joints),
+                conv1x1(256, num_joints+1 if self.use_heatmaps in ('part_segm',
+                        'part_segm_pool') else num_joints),
             )
 
-            soft_att_feature_size = smpl_final_dim # if use_hmr_regression else pose_mlp_inp_dim
+            # if use_hmr_regression else pose_mlp_inp_dim
+            soft_att_feature_size = smpl_final_dim
             self.smpl_final_layer = nn.Sequential(
                 conv3x3(num_deconv_filters[-1], 256),
                 nn.BatchNorm2d(256),
@@ -207,7 +220,9 @@ class PareHead(nn.Module):
         else:
             self.keypoint_final_layer = nn.Conv2d(
                 in_channels=num_deconv_filters[-1],
-                out_channels=num_joints+1 if self.use_heatmaps in ('part_segm', 'part_segm_pool') else num_joints,
+                out_channels=num_joints +
+                1 if self.use_heatmaps in (
+                    'part_segm', 'part_segm_pool') else num_joints,
                 kernel_size=final_conv_kernel,
                 stride=1,
                 padding=1 if final_conv_kernel == 3 else 0,
@@ -227,7 +242,8 @@ class PareHead(nn.Module):
         # if self.iterative_regression or self.num_branch_iteration > 0 or self.use_coattention:
         mean_params = np.load(SMPL_MEAN_PARAMS)
         init_pose = torch.from_numpy(mean_params['pose'][:]).unsqueeze(0)
-        init_shape = torch.from_numpy(mean_params['shape'][:].astype('float32')).unsqueeze(0)
+        init_shape = torch.from_numpy(
+            mean_params['shape'][:].astype('float32')).unsqueeze(0)
         init_cam = torch.from_numpy(mean_params['cam']).unsqueeze(0)
         self.register_buffer('init_pose', init_pose)
         self.register_buffer('init_shape', init_shape)
@@ -237,13 +253,13 @@ class PareHead(nn.Module):
             # enable iterative regression similar to HMR
             # these are the features that can be used as input to final MLPs
             input_type_dim = {
-                'feats': 0, # image features for self
-                'neighbor_pose_feats': 2 * 256, # image features from neighbor joints
-                'all_pose': 24 * 6, # rot6d of all joints from previous iter
-                'self_pose': 6, # rot6d of self
-                'neighbor_pose': 2 * 6, # rot6d of neighbor joints from previous iter
-                'shape': 10, # smpl betas/shape
-                'cam': num_camera_params, # weak perspective camera
+                'feats': 0,  # image features for self
+                'neighbor_pose_feats': 2 * 256,  # image features from neighbor joints
+                'all_pose': 24 * 6,  # rot6d of all joints from previous iter
+                'self_pose': 6,  # rot6d of self
+                'neighbor_pose': 2 * 6,  # rot6d of neighbor joints from previous iter
+                'shape': 10,  # smpl betas/shape
+                'cam': num_camera_params,  # weak perspective camera
             }
 
             assert 'feats' in shape_input_type, '\"feats\" should be the default value'
@@ -252,8 +268,10 @@ class PareHead(nn.Module):
             self.shape_input_type = shape_input_type.split('.')
             self.pose_input_type = pose_input_type.split('.')
 
-            pose_mlp_inp_dim = pose_mlp_inp_dim + sum([input_type_dim[x] for x in self.pose_input_type])
-            shape_mlp_inp_dim = shape_mlp_inp_dim + sum([input_type_dim[x] for x in self.shape_input_type])
+            pose_mlp_inp_dim = pose_mlp_inp_dim + \
+                sum([input_type_dim[x] for x in self.pose_input_type])
+            shape_mlp_inp_dim = shape_mlp_inp_dim + \
+                sum([input_type_dim[x] for x in self.shape_input_type])
 
             logger.debug(f'Shape MLP takes \"{self.shape_input_type}\" as input, '
                          f'input dim: {shape_mlp_inp_dim}')
@@ -267,7 +285,8 @@ class PareHead(nn.Module):
             logger.info(f'HMR regression is active...')
             # enable iterative regression similar to HMR
 
-            self.fc1 = nn.Linear(num_joints * smpl_final_dim + (num_joints * 6) + 10 + num_camera_params, 1024)
+            self.fc1 = nn.Linear(
+                num_joints * smpl_final_dim + (num_joints * 6) + 10 + num_camera_params, 1024)
             self.drop1 = nn.Dropout()
             self.fc2 = nn.Linear(1024, 1024)
             self.drop2 = nn.Dropout()
@@ -288,7 +307,8 @@ class PareHead(nn.Module):
             # weights for these MLPs are not shared
             # hence we use Locally Connected layers
             # TODO support kernel_size > 1 to access context of other joints
-            self.pose_mlp = self._get_pose_mlp(num_joints=num_joints, output_size=6)
+            self.pose_mlp = self._get_pose_mlp(
+                num_joints=num_joints, output_size=6)
 
             if init_xavier:
                 nn.init.xavier_uniform_(self.shape_mlp.weight, gain=0.01)
@@ -296,7 +316,8 @@ class PareHead(nn.Module):
                 nn.init.xavier_uniform_(self.pose_mlp.weight, gain=0.01)
 
         if self.use_branch_nonlocal:
-            logger.info(f'Branch nonlocal is active, type {self.use_branch_nonlocal}')
+            logger.info(
+                f'Branch nonlocal is active, type {self.use_branch_nonlocal}')
             self.branch_2d_nonlocal = eval(self.use_branch_nonlocal).NONLocalBlock2D(
                 in_channels=num_deconv_filters[-1],
                 sub_sample=False,
@@ -310,7 +331,8 @@ class PareHead(nn.Module):
             )
 
         if self.use_final_nonlocal:
-            logger.info(f'Final nonlocal is active, type {self.use_final_nonlocal}')
+            logger.info(
+                f'Final nonlocal is active, type {self.use_final_nonlocal}')
             self.final_pose_nonlocal = eval(self.use_final_nonlocal).NONLocalBlock1D(
                 in_channels=self.pose_mlp_inp_dim,
                 sub_sample=False,
@@ -334,8 +356,10 @@ class PareHead(nn.Module):
             )
 
         if self.use_coattention:
-            logger.info(f'Coattention is active, final conv type {self.coattention_conv}')
-            self.coattention = CoAttention(n_channel=num_deconv_filters[-1], final_conv=self.coattention_conv)
+            logger.info(
+                f'Coattention is active, final conv type {self.coattention_conv}')
+            self.coattention = CoAttention(
+                n_channel=num_deconv_filters[-1], final_conv=self.coattention_conv)
 
         if self.num_branch_iteration > 0:
             logger.info(f'Branch iteration is active')
@@ -382,7 +406,8 @@ class PareHead(nn.Module):
         for i in range(self.shape_mlp_num_layers):
             if i == 0:
                 module_list.append(
-                    nn.Linear(self.shape_mlp_inp_dim, self.shape_mlp_hidden_size)
+                    nn.Linear(self.shape_mlp_inp_dim,
+                              self.shape_mlp_hidden_size)
                 )
             elif i == self.shape_mlp_num_layers - 1:
                 module_list.append(
@@ -390,7 +415,8 @@ class PareHead(nn.Module):
                 )
             else:
                 module_list.append(
-                    nn.Linear(self.shape_mlp_hidden_size, self.shape_mlp_hidden_size)
+                    nn.Linear(self.shape_mlp_hidden_size,
+                              self.shape_mlp_hidden_size)
                 )
         return nn.Sequential(*module_list)
 
@@ -497,7 +523,8 @@ class PareHead(nn.Module):
         for i in range(num_heads):
             layers = []
             for _ in range(num_basic_blocks):
-                layers.append(nn.Sequential(BasicBlock(num_channels, num_channels)))
+                layers.append(nn.Sequential(
+                    BasicBlock(num_channels, num_channels)))
             head_layers.append(nn.Sequential(*layers))
 
         # head_layers.append(nn.Conv2d(in_channels=num_channels, out_channels=output_channels,
@@ -546,7 +573,8 @@ class PareHead(nn.Module):
                 self._get_deconv_cfg(num_kernels[i])
 
             planes = num_filters[i]
-            layers.append(nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True))
+            layers.append(nn.Upsample(scale_factor=2,
+                          mode='bilinear', align_corners=True))
             layers.append(
                 nn.Conv2d(in_channels=self.num_input_features, out_channels=planes,
                           kernel_size=kernel, stride=1, padding=padding, bias=self.deconv_with_bias)
@@ -580,7 +608,8 @@ class PareHead(nn.Module):
                 n_pose_feat = []
                 for jt in joint_triplets:
                     n_pose_feat.append(
-                        feats[:, :, jt[1:]].reshape(batch_size, -1, 1).unsqueeze(-2)
+                        feats[:, :, jt[1:]].reshape(
+                            batch_size, -1, 1).unsqueeze(-2)
                     )
                 n_pose_feat = torch.cat(n_pose_feat, 2)
                 inp_list.append(n_pose_feat)
@@ -591,7 +620,8 @@ class PareHead(nn.Module):
 
             if inp_type == 'all_pose':
                 # append all of the joint angels
-                all_pose = pred_pose.reshape(batch_size, -1, 1)[..., None].repeat(1, 1, num_joints, 1)
+                all_pose = pred_pose.reshape(
+                    batch_size, -1, 1)[..., None].repeat(1, 1, num_joints, 1)
                 inp_list.append(all_pose)
 
             if inp_type == 'neighbor_pose':
@@ -599,19 +629,22 @@ class PareHead(nn.Module):
                 n_pose = []
                 for jt in joint_triplets:
                     n_pose.append(
-                        pred_pose[:,:,jt[1:]].reshape(batch_size, -1, 1).unsqueeze(-2)
+                        pred_pose[:, :, jt[1:]].reshape(
+                            batch_size, -1, 1).unsqueeze(-2)
                     )
                 n_pose = torch.cat(n_pose, 2)
                 inp_list.append(n_pose)
 
             if inp_type == 'shape':
                 # append shape predictions
-                pred_shape = pred_shape[..., None, None].repeat(1, 1, num_joints, 1)
+                pred_shape = pred_shape[..., None,
+                                        None].repeat(1, 1, num_joints, 1)
                 inp_list.append(pred_shape)
 
             if inp_type == 'cam':
                 # append camera predictions
-                pred_cam = pred_cam[..., None, None].repeat(1, 1, num_joints, 1)
+                pred_cam = pred_cam[..., None, None].repeat(
+                    1, 1, num_joints, 1)
                 inp_list.append(pred_cam)
 
         assert len(inp_list) > 0
@@ -660,7 +693,8 @@ class PareHead(nn.Module):
         init_cam = self.init_cam.expand(batch_size, -1)
 
         if self.use_position_encodings:
-            features = torch.cat((features, self.pos_enc.repeat(features.shape[0], 1, 1, 1)), 1)
+            features = torch.cat(
+                (features, self.pos_enc.repeat(features.shape[0], 1, 1, 1)), 1)
 
         output = {}
 
@@ -677,12 +711,15 @@ class PareHead(nn.Module):
         if gt_segm is not None:
             # logger.debug(gt_segm.shape)
             # import IPython; IPython.embed(); exit()
-            gt_segm = F.interpolate(gt_segm.unsqueeze(1).float(), scale_factor=(1/4, 1/4), mode='nearest').long().squeeze(1)
-            part_attention = F.one_hot(gt_segm.to('cpu'), num_classes=self.num_joints + 1).permute(0,3,1,2).float()[:,1:,:,:]
+            gt_segm = F.interpolate(gt_segm.unsqueeze(1).float(), scale_factor=(
+                1/4, 1/4), mode='nearest').long().squeeze(1)
+            part_attention = F.one_hot(gt_segm.to(
+                'cpu'), num_classes=self.num_joints + 1).permute(0, 3, 1, 2).float()[:, 1:, :, :]
             part_attention = part_attention.to('cuda')
             # part_attention = F.interpolate(part_attention, scale_factor=1/4, mode='bilinear', align_corners=True)
             # import IPython; IPython.embed(); exit()
-        point_local_feat, cam_shape_feats = self._get_local_feats(smpl_feats, part_attention, output)
+        point_local_feat, cam_shape_feats = self._get_local_feats(
+            smpl_feats, part_attention, output)
 
         ############## GET FINAL PREDICTIONS ##############
         pred_pose, pred_shape, pred_cam = self._get_final_preds(
@@ -691,9 +728,12 @@ class PareHead(nn.Module):
 
         if self.use_coattention:
             for c in range(self.num_coattention_iter):
-                smpl_feats, part_feats = self.coattention(smpl_feats, part_feats)
-                part_attention = self._get_part_attention_map(part_feats, output)
-                point_local_feat, cam_shape_feats = self._get_local_feats(smpl_feats, part_attention, output)
+                smpl_feats, part_feats = self.coattention(
+                    smpl_feats, part_feats)
+                part_attention = self._get_part_attention_map(
+                    part_feats, output)
+                point_local_feat, cam_shape_feats = self._get_local_feats(
+                    smpl_feats, part_attention, output)
                 pred_pose, pred_shape, pred_cam = self._get_final_preds(
                     point_local_feat, cam_shape_feats, pred_pose, pred_shape, pred_cam
                 )
@@ -707,8 +747,10 @@ class PareHead(nn.Module):
                     smpl_feats = self.branch_iter_3d_nonlocal(smpl_feats)
                     part_feats = smpl_feats
 
-                part_attention = self._get_part_attention_map(part_feats, output)
-                point_local_feat, cam_shape_feats = self._get_local_feats(smpl_feats, part_attention, output)
+                part_attention = self._get_part_attention_map(
+                    part_feats, output)
+                point_local_feat, cam_shape_feats = self._get_local_feats(
+                    smpl_feats, part_attention, output)
                 pred_pose, pred_shape, pred_cam = self._get_final_preds(
                     point_local_feat, cam_shape_feats, pred_pose, pred_shape, pred_cam,
                 )
@@ -726,8 +768,10 @@ class PareHead(nn.Module):
         cam_shape_feats = self.smpl_final_layer(smpl_feats)
 
         if self.use_keypoint_attention:
-            point_local_feat = self.keypoint_attention(smpl_feats, part_attention)
-            cam_shape_feats = self.keypoint_attention(cam_shape_feats, part_attention)
+            point_local_feat = self.keypoint_attention(
+                smpl_feats, part_attention)
+            cam_shape_feats = self.keypoint_attention(
+                cam_shape_feats, part_attention)
         else:
             point_local_feat = interpolate(smpl_feats, output['pred_kp2d'])
             cam_shape_feats = interpolate(cam_shape_feats, output['pred_kp2d'])
@@ -764,18 +808,23 @@ class PareHead(nn.Module):
             output['pred_heatmaps_2d'] = heatmaps
         elif self.use_heatmaps == 'part_segm':
             output['pred_segm_mask'] = heatmaps
-            heatmaps = heatmaps[:,1:,:,:] # remove the first channel which encodes the background
+            # remove the first channel which encodes the background
+            heatmaps = heatmaps[:, 1:, :, :]
         elif self.use_heatmaps == 'part_segm_pool':
             output['pred_segm_mask'] = heatmaps
-            heatmaps = heatmaps[:,1:,:,:] # remove the first channel which encodes the background
-            pred_kp2d, _ = softargmax2d(heatmaps, self.temperature) # get_heatmap_preds(heatmaps)
+            # remove the first channel which encodes the background
+            heatmaps = heatmaps[:, 1:, :, :]
+            # get_heatmap_preds(heatmaps)
+            pred_kp2d, _ = softargmax2d(heatmaps, self.temperature)
             output['pred_kp2d'] = pred_kp2d
 
             for k, v in output.items():
                 if torch.any(torch.isnan(v)):
-                    logger.debug(f'{k} is Nan!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                    logger.debug(
+                        f'{k} is Nan!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 if torch.any(torch.isinf(v)):
-                    logger.debug(f'{k} is Inf!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                    logger.debug(
+                        f'{k} is Inf!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
             # if torch.any(torch.isnan(pred_kp2d)):
             #     print('pred_kp2d nan', pred_kp2d.min(), pred_kp2d.max())
@@ -828,10 +877,11 @@ class PareHead(nn.Module):
 
         if init_pose.shape[-1] == 6:
             # This means init_pose comes from a previous iteration
-            init_pose = init_pose.transpose(2,1).unsqueeze(-1)
+            init_pose = init_pose.transpose(2, 1).unsqueeze(-1)
         else:
             # This means init pose comes from mean pose
-            init_pose = init_pose.reshape(init_pose.shape[0], 6, -1).unsqueeze(-1)
+            init_pose = init_pose.reshape(
+                init_pose.shape[0], 6, -1).unsqueeze(-1)
 
         if self.iterative_regression:
 
@@ -846,8 +896,10 @@ class PareHead(nn.Module):
             for i in range(self.num_iterations):
                 # pose_feats shape: [N, 256, 24, 1]
                 # shape_feats shape: [N, 24*64]
-                pose_mlp_inp = self._prepare_pose_mlp_inp(pose_feats, pred_pose, pred_shape, pred_cam)
-                shape_mlp_inp = self._prepare_shape_mlp_inp(shape_feats, pred_pose, pred_shape, pred_cam)
+                pose_mlp_inp = self._prepare_pose_mlp_inp(
+                    pose_feats, pred_pose, pred_shape, pred_cam)
+                shape_mlp_inp = self._prepare_shape_mlp_inp(
+                    shape_feats, pred_pose, pred_shape, pred_cam)
 
                 # print('pose_mlp_inp', pose_mlp_inp.shape)
                 # print('shape_mlp_inp', shape_mlp_inp.shape)
@@ -867,7 +919,8 @@ class PareHead(nn.Module):
         else:
             shape_feats = cam_shape_feats
             if self.use_final_nonlocal:
-                pose_feats = self.final_pose_nonlocal(pose_feats.squeeze(-1)).unsqueeze(-1)
+                pose_feats = self.final_pose_nonlocal(
+                    pose_feats.squeeze(-1)).unsqueeze(-1)
                 shape_feats = self.final_shape_nonlocal(shape_feats)
 
             shape_feats = torch.flatten(shape_feats, start_dim=1)
@@ -883,8 +936,7 @@ class PareHead(nn.Module):
             if self.use_mean_pose:
                 pred_pose = pred_pose + init_pose
 
-
-        pred_pose = pred_pose.squeeze(-1).transpose(2, 1) # N, J, 6
+        pred_pose = pred_pose.squeeze(-1).transpose(2, 1)  # N, J, 6
         return pred_pose, pred_shape, pred_cam
 
     def forward_pretraining(self, features):

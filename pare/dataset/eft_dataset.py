@@ -34,7 +34,8 @@ class EFTDataset(torch.utils.data.Dataset):
         self.dataset_list = datasets_ratios[:hl]
         self.dataset_ratios = datasets_ratios[hl:]
 
-        assert len(self.dataset_list) == len(self.dataset_ratios), 'Number of datasets and ratios should be equal'
+        assert len(self.dataset_list) == len(
+            self.dataset_ratios), 'Number of datasets and ratios should be equal'
 
         # self.dataset_list = ['h36m', 'mpii', 'lspet', 'coco', 'mpi-inf-3dhp']
         self.dataset_dict = {
@@ -53,14 +54,16 @@ class EFTDataset(torch.utils.data.Dataset):
                 logger.info(f'Found {len(occluders["obj_class"])} suitable '
                             f'objects from {options.OCC_AUG_DATASET} dataset')
             elif options.OCC_AUG_DATASET == 'pascal':
-                occluders = load_pascal_occluders(pascal_voc_root_path=config.PASCAL_ROOT)
+                occluders = load_pascal_occluders(
+                    pascal_voc_root_path=config.PASCAL_ROOT)
                 logger.info(f'Found {len(occluders)} suitable '
                             f'objects from {options.OCC_AUG_DATASET} dataset')
 
         self.datasets = [eval(f'{options.LOAD_TYPE}Dataset')(options, ds, occluders=occluders, **kwargs)
                          for ds in self.dataset_list]
         total_length = sum([len(ds) for ds in self.datasets])
-        length_itw = sum([len(ds) for ds in self.datasets if ds.dataset in itw_datasets])
+        length_itw = sum([len(ds)
+                         for ds in self.datasets if ds.dataset in itw_datasets])
         self.length = max([len(ds) for ds in self.datasets])
 
         self.partition = []

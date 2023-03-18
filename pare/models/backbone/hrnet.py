@@ -333,13 +333,19 @@ class PoseHighResolutionNet(nn.Module):
         self.pretrained_layers = extra['PRETRAINED_LAYERS']
 
         if extra.DOWNSAMPLE and extra.USE_CONV:
-            self.downsample_stage_1 = self._make_downsample_layer(3, num_channel=self.stage2_cfg['NUM_CHANNELS'][0])
-            self.downsample_stage_2 = self._make_downsample_layer(2, num_channel=self.stage2_cfg['NUM_CHANNELS'][-1])
-            self.downsample_stage_3 = self._make_downsample_layer(1, num_channel=self.stage3_cfg['NUM_CHANNELS'][-1])
+            self.downsample_stage_1 = self._make_downsample_layer(
+                3, num_channel=self.stage2_cfg['NUM_CHANNELS'][0])
+            self.downsample_stage_2 = self._make_downsample_layer(
+                2, num_channel=self.stage2_cfg['NUM_CHANNELS'][-1])
+            self.downsample_stage_3 = self._make_downsample_layer(
+                1, num_channel=self.stage3_cfg['NUM_CHANNELS'][-1])
         elif not extra.DOWNSAMPLE and extra.USE_CONV:
-            self.upsample_stage_2 = self._make_upsample_layer(1, num_channel=self.stage2_cfg['NUM_CHANNELS'][-1])
-            self.upsample_stage_3 = self._make_upsample_layer(2, num_channel=self.stage3_cfg['NUM_CHANNELS'][-1])
-            self.upsample_stage_4 = self._make_upsample_layer(3, num_channel=self.stage4_cfg['NUM_CHANNELS'][-1])
+            self.upsample_stage_2 = self._make_upsample_layer(
+                1, num_channel=self.stage2_cfg['NUM_CHANNELS'][-1])
+            self.upsample_stage_3 = self._make_upsample_layer(
+                2, num_channel=self.stage3_cfg['NUM_CHANNELS'][-1])
+            self.upsample_stage_4 = self._make_upsample_layer(
+                3, num_channel=self.stage4_cfg['NUM_CHANNELS'][-1])
 
     def _make_transition_layer(
             self, num_channels_pre_layer, num_channels_cur_layer):
@@ -436,7 +442,8 @@ class PoseHighResolutionNet(nn.Module):
     def _make_upsample_layer(self, num_layers, num_channel, kernel_size=3):
         layers = []
         for i in range(num_layers):
-            layers.append(nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True))
+            layers.append(nn.Upsample(scale_factor=2,
+                          mode='bilinear', align_corners=True))
             layers.append(
                 nn.Conv2d(
                     in_channels=num_channel, out_channels=num_channel,
@@ -505,9 +512,12 @@ class PoseHighResolutionNet(nn.Module):
             else:
                 # Downsampling with interpolation
                 x0_h, x0_w = x[3].size(2), x[3].size(3)
-                x1 = F.interpolate(x[0], size=(x0_h, x0_w), mode='bilinear', align_corners=True)
-                x2 = F.interpolate(x[1], size=(x0_h, x0_w), mode='bilinear', align_corners=True)
-                x3 = F.interpolate(x[2], size=(x0_h, x0_w), mode='bilinear', align_corners=True)
+                x1 = F.interpolate(x[0], size=(x0_h, x0_w),
+                                   mode='bilinear', align_corners=True)
+                x2 = F.interpolate(x[1], size=(x0_h, x0_w),
+                                   mode='bilinear', align_corners=True)
+                x3 = F.interpolate(x[2], size=(x0_h, x0_w),
+                                   mode='bilinear', align_corners=True)
                 x = torch.cat([x1, x2, x3, x[3]], 1)
         else:
             if self.cfg.USE_CONV:
@@ -519,9 +529,12 @@ class PoseHighResolutionNet(nn.Module):
             else:
                 # Upsampling with interpolation
                 x0_h, x0_w = x[0].size(2), x[0].size(3)
-                x1 = F.interpolate(x[1], size=(x0_h, x0_w), mode='bilinear', align_corners=True)
-                x2 = F.interpolate(x[2], size=(x0_h, x0_w), mode='bilinear', align_corners=True)
-                x3 = F.interpolate(x[3], size=(x0_h, x0_w), mode='bilinear', align_corners=True)
+                x1 = F.interpolate(x[1], size=(x0_h, x0_w),
+                                   mode='bilinear', align_corners=True)
+                x2 = F.interpolate(x[2], size=(x0_h, x0_w),
+                                   mode='bilinear', align_corners=True)
+                x3 = F.interpolate(x[3], size=(x0_h, x0_w),
+                                   mode='bilinear', align_corners=True)
                 x = torch.cat([x[0], x1, x2, x3], 1)
 
         return x
@@ -545,7 +558,8 @@ class PoseHighResolutionNet(nn.Module):
                         nn.init.constant_(m.bias, 0)
 
         if os.path.isfile(pretrained):
-            pretrained_state_dict = torch.load(pretrained, map_location=torch.device('cpu'))
+            pretrained_state_dict = torch.load(
+                pretrained, map_location=torch.device('cpu'))
             logger.info('=> loading pretrained model {}'.format(pretrained))
 
             need_init_state_dict = {}
@@ -555,7 +569,8 @@ class PoseHighResolutionNet(nn.Module):
                     need_init_state_dict[name] = m
             self.load_state_dict(need_init_state_dict, strict=False)
         elif pretrained:
-            logger.warning('IMPORTANT WARNING!! Please download pre-trained models if you are in TRAINING mode!')
+            logger.warning(
+                'IMPORTANT WARNING!! Please download pre-trained models if you are in TRAINING mode!')
             # raise ValueError('{} is not exist!'.format(pretrained))
 
 
@@ -604,7 +619,8 @@ def get_cfg_defaults(pretrained, width=32, downsample=False, use_conv=False):
     cfg = CN()
     cfg.MODEL = CN()
     cfg.MODEL.INIT_WEIGHTS = True
-    cfg.MODEL.PRETRAINED = pretrained  # 'data/pretrained_models/hrnet_w32-36af842e.pth'
+    # 'data/pretrained_models/hrnet_w32-36af842e.pth'
+    cfg.MODEL.PRETRAINED = pretrained
     cfg.MODEL.EXTRA = HRNET
     cfg.MODEL.NUM_JOINTS = 24
     return cfg
@@ -615,8 +631,9 @@ def hrnet_w32(
         pretrained_ckpt='data/pretrained_models/pose_coco/pose_hrnet_w32_256x192.pth',
         downsample=False,
         use_conv=False,
-): 
-    cfg = get_cfg_defaults(pretrained_ckpt, width=32, downsample=downsample, use_conv=use_conv)
+):
+    cfg = get_cfg_defaults(pretrained_ckpt, width=32,
+                           downsample=downsample, use_conv=use_conv)
     return get_pose_net(cfg, is_train=True)
 
 
@@ -626,5 +643,6 @@ def hrnet_w48(
         downsample=False,
         use_conv=False,
 ):
-    cfg = get_cfg_defaults(pretrained_ckpt, width=48, downsample=downsample, use_conv=use_conv)
+    cfg = get_cfg_defaults(pretrained_ckpt, width=48,
+                           downsample=downsample, use_conv=use_conv)
     return get_pose_net(cfg, is_train=True)

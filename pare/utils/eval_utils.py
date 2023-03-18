@@ -54,7 +54,7 @@ def compute_similarity_transform(S1, S2):
         S1 = S1.T
         S2 = S2.T
         transposed = True
-    assert(S2.shape[1] == S1.shape[1])
+    assert (S2.shape[1] == S1.shape[1])
 
     # 1. Remove mean.
     mu1 = S1.mean(axis=1, keepdims=True)
@@ -105,7 +105,7 @@ def reconstruction_error(S1, S2, reduction='mean'):
     """Do Procrustes alignment and compute reconstruction error."""
     S1_hat = compute_similarity_transform_batch(S1, S2)
 
-    re_per_joint = np.sqrt( ((S1_hat - S2)** 2).sum(axis=-1))
+    re_per_joint = np.sqrt(((S1_hat - S2) ** 2).sum(axis=-1))
     re = re_per_joint.mean(axis=-1)
     if reduction == 'mean':
         re = re.mean()
@@ -130,18 +130,19 @@ def compute_error_verts(pred_verts, target_verts=None, target_theta=None):
         device = 'cuda'
         smpl = SMPL(
             SMPL_MODEL_DIR,
-            batch_size=1, # target_theta.shape[0],
+            batch_size=1,  # target_theta.shape[0],
         ).to(device)
 
-        betas = torch.from_numpy(target_theta[:,75:]).to(device)
-        pose = torch.from_numpy(target_theta[:,3:75]).to(device)
+        betas = torch.from_numpy(target_theta[:, 75:]).to(device)
+        pose = torch.from_numpy(target_theta[:, 3:75]).to(device)
 
         target_verts = []
         b_ = torch.split(betas, 5000)
         p_ = torch.split(pose, 5000)
 
-        for b,p in zip(b_,p_):
-            output = smpl(betas=b, body_pose=p[:, 3:], global_orient=p[:, :3], pose2rot=True)
+        for b, p in zip(b_, p_):
+            output = smpl(
+                betas=b, body_pose=p[:, 3:], global_orient=p[:, :3], pose2rot=True)
             target_verts.append(output.vertices.detach().cpu().numpy())
 
         target_verts = np.concatenate(target_verts, axis=0)
@@ -161,17 +162,19 @@ def find_best_ckpt(cfg_file, use_mpjpe=False, new_version=False, json_f='val_acc
 
     acc_arr = []
     for acc in acc_results:
-        if acc[1]['val_mpjpe'] < 10: continue
+        if acc[1]['val_mpjpe'] < 10:
+            continue
         acc_arr.append([acc[1]['val_mpjpe'], acc[1]['val_pampjpe']])
 
     accuracy = np.array(acc_arr)
 
     if new_version:
-        epochs_list = [int(acc[2]) for acc in acc_results if acc[1]['val_mpjpe'] >= 10]
+        epochs_list = [int(acc[2])
+                       for acc in acc_results if acc[1]['val_mpjpe'] >= 10]
         best_mpjpe_epoch = epochs_list[accuracy[:, 0].argmin()]
         best_pampjpe_epoch = epochs_list[accuracy[:, 1].argmin()]
     else:
-        best_mpjpe_epoch = (accuracy[:,0].argmin() + 1) * check_freq - 1
+        best_mpjpe_epoch = (accuracy[:, 0].argmin() + 1) * check_freq - 1
         best_pampjpe_epoch = (accuracy[:, 1].argmin() + 1) * check_freq - 1
 
     best_epoch = best_mpjpe_epoch if use_mpjpe else best_pampjpe_epoch
@@ -191,5 +194,3 @@ def find_best_ckpt(cfg_file, use_mpjpe=False, new_version=False, json_f='val_acc
                 f'PA-MPJPE: {accuracy[accuracy[:,1].argmin(), 1]:.2f}')
 
     return ckpt_file
-
-

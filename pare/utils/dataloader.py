@@ -26,7 +26,8 @@ class RandomSampler(Sampler):
         self.data_source = data_source
         if checkpoint is not None and checkpoint['dataset_perm'] is not None:
             self.dataset_perm = checkpoint['dataset_perm']
-            self.perm = self.dataset_perm[checkpoint['batch_size'] * checkpoint['batch_idx']:]
+            self.perm = self.dataset_perm[checkpoint['batch_size']
+                                          * checkpoint['batch_idx']:]
         else:
             self.dataset_perm = torch.randperm(len(self.data_source)).tolist()
             self.perm = torch.randperm(len(self.data_source)).tolist()
@@ -44,7 +45,8 @@ class SequentialSampler(Sampler):
         self.data_source = data_source
         if checkpoint is not None and checkpoint['dataset_perm'] is not None:
             self.dataset_perm = checkpoint['dataset_perm']
-            self.perm = self.dataset_perm[checkpoint['batch_size'] * checkpoint['batch_idx']:]
+            self.perm = self.dataset_perm[checkpoint['batch_size']
+                                          * checkpoint['batch_idx']:]
         else:
             self.dataset_perm = list(range(len(self.data_source)))
             self.perm = self.dataset_perm

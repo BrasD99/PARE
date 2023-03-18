@@ -66,7 +66,8 @@ class MultivariateGaussianNegativeLogLikelihood(nn.Module):
         logsigma = pred[:, n_dims:]
         # logsigma = torch.pow(pred[:, n_dims:], 2)
 
-        mse = -0.5 * torch.sum(torch.square((gt - mu) / torch.exp(logsigma)), dim=1)
+        mse = -0.5 * torch.sum(torch.square((gt - mu) /
+                               torch.exp(logsigma)), dim=1)
         sigma_trace = -torch.sum(logsigma, dim=1)
         log2pi = -0.5 * n_dims * np.log(2 * np.pi)
 
@@ -88,6 +89,7 @@ class MultivariateGaussianNegativeLogLikelihood(nn.Module):
 class LaplacianLoss(torch.nn.Module):
     """1D Gaussian with std depending on the absolute distance
     """
+
     def __init__(self, size_average=True, reduce=True, evaluate=False):
         super(LaplacianLoss, self).__init__()
         self.size_average = size_average
@@ -111,7 +113,8 @@ class LaplacianLoss(torch.nn.Module):
 
         term_a = torch.abs(norm) * torch.exp(-si)
         term_b = si
-        norm_bi = (np.mean(np.abs(norm.cpu().detach().numpy())), np.mean(torch.exp(si).cpu().detach().numpy()))
+        norm_bi = (np.mean(np.abs(norm.cpu().detach().numpy())),
+                   np.mean(torch.exp(si).cpu().detach().numpy()))
 
         if self.evaluate:
             return norm_bi
@@ -133,6 +136,7 @@ class LaplacianLoss(torch.nn.Module):
 class GaussianLoss(torch.nn.Module):
     """1D Gaussian with std depending on the absolute distance
     """
+
     def __init__(self, device, size_average=True, reduce=True, evaluate=False):
         super(GaussianLoss, self).__init__()
         self.size_average = size_average
@@ -157,7 +161,8 @@ class GaussianLoss(torch.nn.Module):
         term_a = (norm / si)**2 / 2
         term_b = torch.log(si * math.sqrt(2 * math.pi))
 
-        norm_si = (np.mean(np.abs(norm.cpu().detach().numpy())), np.mean(si.cpu().detach().numpy()))
+        norm_si = (np.mean(np.abs(norm.cpu().detach().numpy())),
+                   np.mean(si.cpu().detach().numpy()))
 
         if self.evaluate:
             return norm_si
@@ -178,7 +183,8 @@ class GaussianLoss(torch.nn.Module):
 # Losses from https://github.com/chaneyddtt/Generating-Multiple-Hypotheses-for-3D-Human-Pose-Estimation-with-
 # Mixture-Density-Network/blob/master/src/mix_den_model.py
 
-def mean_log_Gaussian_like(y_true, parameters,c,m ):
+
+def mean_log_Gaussian_like(y_true, parameters, c, m):
     """Mean Log Gaussian Likelihood distribution
     y_truth: ground truth 3d pose
     parameters: output of hypotheses generator, which conclude the mean, variance and mixture coeffcient of the mixture model
@@ -188,13 +194,14 @@ def mean_log_Gaussian_like(y_true, parameters,c,m ):
     components = tf.reshape(parameters, [-1, c + 2, m])
     mu = components[:, :c, :]
     sigma = components[:, c, :]
-    sigma = tf.clip_by_value(sigma, 1e-15,1e15)
+    sigma = tf.clip_by_value(sigma, 1e-15, 1e15)
     alpha = components[:, c + 1, :]
     alpha = tf.clip_by_value(alpha, 1e-8, 1.)
 
     exponent = tf.log(alpha) - 0.5 * c * tf.log(2 * np.pi) \
-               - c * tf.log(sigma) \
-               - tf.reduce_sum((tf.expand_dims(y_true, 2) - mu) ** 2, axis=1) / (2.0 * (sigma) ** 2.0)
+        - c * tf.log(sigma) \
+        - tf.reduce_sum((tf.expand_dims(y_true, 2) - mu) **
+                        2, axis=1) / (2.0 * (sigma) ** 2.0)
 
     log_gauss = log_sum_exp(exponent, axis=1)
     res = - tf.reduce_mean(log_gauss)
@@ -205,6 +212,4 @@ def log_sum_exp(x, axis=None):
     """Log-sum-exp trick implementation"""
     x_max = tf.reduce_max(x, axis=axis, keep_dims=True)
     return tf.log(tf.reduce_sum(tf.exp(x - x_max),
-                       axis=axis, keep_dims=True))+x_max
-
-
+                                axis=axis, keep_dims=True))+x_max

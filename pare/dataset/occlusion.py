@@ -56,7 +56,8 @@ def load_occluders(pascal_voc_root_path):
     occluders = []
     structuring_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
 
-    annotation_paths = list_filepaths(os.path.join(pascal_voc_root_path, 'Annotations'))
+    annotation_paths = list_filepaths(
+        os.path.join(pascal_voc_root_path, 'Annotations'))
     for annotation_path in annotation_paths:
         xml_root = xml.etree.ElementTree.parse(annotation_path).getroot()
         is_segmented = (xml_root.find('segmented').text != '0')
@@ -71,7 +72,8 @@ def load_occluders(pascal_voc_root_path):
             is_truncated = (obj.find('truncated').text != '0')
             if not is_person and not is_difficult and not is_truncated:
                 bndbox = obj.find('bndbox')
-                box = [int(bndbox.find(s).text) for s in ['xmin', 'ymin', 'xmax', 'ymax']]
+                box = [int(bndbox.find(s).text)
+                       for s in ['xmin', 'ymin', 'xmax', 'ymax']]
                 boxes.append((i_obj, box))
 
         if not boxes:
@@ -81,13 +83,15 @@ def load_occluders(pascal_voc_root_path):
         seg_filename = im_filename.replace('jpg', 'png')
 
         im_path = os.path.join(pascal_voc_root_path, 'JPEGImages', im_filename)
-        seg_path = os.path.join(pascal_voc_root_path, 'SegmentationObject', seg_filename)
+        seg_path = os.path.join(pascal_voc_root_path,
+                                'SegmentationObject', seg_filename)
 
         im = np.asarray(PIL.Image.open(im_path))
         labels = np.asarray(PIL.Image.open(seg_path))
 
         for i_obj, (xmin, ymin, xmax, ymax) in boxes:
-            object_mask = (labels[ymin:ymax, xmin:xmax] == i_obj + 1).astype(np.uint8) * 255
+            object_mask = (labels[ymin:ymax, xmin:xmax] ==
+                           i_obj + 1).astype(np.uint8) * 255
             object_image = im[ymin:ymax, xmin:xmax]
             if cv2.countNonZero(object_mask) < 500:
                 # Ignore small objects
@@ -96,7 +100,8 @@ def load_occluders(pascal_voc_root_path):
             # Reduce the opacity of the mask along the border for smoother blending
             eroded = cv2.erode(object_mask, structuring_element)
             object_mask[eroded < object_mask] = 192
-            object_with_mask = np.concatenate([object_image, object_mask[..., np.newaxis]], axis=-1)
+            object_with_mask = np.concatenate(
+                [object_image, object_mask[..., np.newaxis]], axis=-1)
 
             # Downscale for efficiency
             object_with_mask = resize_by_factor(object_with_mask, 0.5)
@@ -158,14 +163,15 @@ def paste_over(im_src, im_dst, center):
     alpha = region_src[..., 3:].astype(np.float32) / 255
 
     im_dst[start_dst[1]:end_dst[1], start_dst[0]:end_dst[0]] = (
-            alpha * color_src + (1 - alpha) * region_dst)
+        alpha * color_src + (1 - alpha) * region_dst)
 
 
 def resize_by_factor(im, factor):
     """Returns a copy of `im` resized by `factor`, using bilinear interp for up and area interp
     for downscaling.
     """
-    new_size = tuple(np.round(np.array([im.shape[1], im.shape[0]]) * factor).astype(int))
+    new_size = tuple(
+        np.round(np.array([im.shape[1], im.shape[0]]) * factor).astype(int))
     interp = cv2.INTER_LINEAR if factor > 1.0 else cv2.INTER_AREA
     return cv2.resize(im, new_size, fx=factor, fy=factor, interpolation=interp)
 
@@ -183,6 +189,7 @@ def test_usage():
     example_image = cv2.resize(skimage.data.astronaut(), (256, 256))
     occluded_image = occlude_with_objects(example_image, occluders)
     plt.show(occluded_image)
+
 
 if __name__ == '__main__':
     main()

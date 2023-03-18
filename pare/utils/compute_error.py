@@ -30,7 +30,8 @@ def compute_error(result_file):
     results = joblib.load(result_file)
 
     logger.info(f'MPJPE on 3DPW-All Set: {results["mpjpe"].mean() * 1000}')
-    logger.info(f'PA-MPJPE on 3DPW-All Set: {results["pampjpe"].mean() * 1000}')
+    logger.info(
+        f'PA-MPJPE on 3DPW-All Set: {results["pampjpe"].mean() * 1000}')
     logger.info(f'PVE on 3DPW-All Set: {results["v2v"].mean() * 1000}')
 
     ######## TEST SET #########
@@ -55,7 +56,8 @@ def compute_error(result_file):
     v2v = np.array(v2v)
 
     logger.info(f'MPJPE on 3DPW-Test Set: {np.array(mpjpe).mean() * 1000}')
-    logger.info(f'PA-MPJPE on 3DPW-Test Set: {np.array(pampjpe).mean() * 1000}')
+    logger.info(
+        f'PA-MPJPE on 3DPW-Test Set: {np.array(pampjpe).mean() * 1000}')
     logger.info(f'PVE on 3DPW-Test Set: {np.array(v2v).mean() * 1000}')
 
     ######## OCCLUSION #########
@@ -80,6 +82,8 @@ def compute_error(result_file):
     pampjpe = np.array(pampjpe)
     v2v = np.array(v2v)
 
-    logger.info(f'MPJPE on Occluded Sequences: {np.array(mpjpe).mean() * 1000}')
-    logger.info(f'PA-MPJPE on Occluded Sequences: {np.array(pampjpe).mean() * 1000}')
+    logger.info(
+        f'MPJPE on Occluded Sequences: {np.array(mpjpe).mean() * 1000}')
+    logger.info(
+        f'PA-MPJPE on Occluded Sequences: {np.array(pampjpe).mean() * 1000}')
     logger.info(f'PVE on Occluded Sequences: {np.array(v2v).mean() * 1000}')

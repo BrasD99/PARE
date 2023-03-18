@@ -97,14 +97,15 @@ class SMPLify():
                     # import ipdb; ipdb.set_trace()
 
                     loss = temporal_camera_fitting_loss(model_joints, camera_translation,
-                                               init_cam_t, camera_center,
-                                               joints_2d, joints_conf, focal_length=self.focal_length)
+                                                        init_cam_t, camera_center,
+                                                        joints_2d, joints_conf, focal_length=self.focal_length)
                     loss.backward()
                     return loss
 
                 camera_optimizer.step(closure)
         else:
-            camera_optimizer = torch.optim.Adam(camera_opt_params, lr=self.step_size, betas=(0.9, 0.999))
+            camera_optimizer = torch.optim.Adam(
+                camera_opt_params, lr=self.step_size, betas=(0.9, 0.999))
 
             for i in range(self.num_iters):
                 smpl_output = self.smpl(global_orient=global_orient,
@@ -112,8 +113,8 @@ class SMPLify():
                                         betas=betas)
                 model_joints = smpl_output.joints
                 loss = temporal_camera_fitting_loss(model_joints, camera_translation,
-                                           init_cam_t, camera_center,
-                                           joints_2d, joints_conf, focal_length=self.focal_length)
+                                                    init_cam_t, camera_center,
+                                                    joints_2d, joints_conf, focal_length=self.focal_length)
                 camera_optimizer.zero_grad()
                 loss.backward()
                 camera_optimizer.step()
@@ -144,14 +145,15 @@ class SMPLify():
                     model_joints = smpl_output.joints
 
                     loss = temporal_body_fitting_loss(body_pose, betas, model_joints, camera_translation, camera_center,
-                                             joints_2d, joints_conf, self.pose_prior,
-                                             focal_length=self.focal_length)
+                                                      joints_2d, joints_conf, self.pose_prior,
+                                                      focal_length=self.focal_length)
                     loss.backward()
                     return loss
 
                 body_optimizer.step(closure)
         else:
-            body_optimizer = torch.optim.Adam(body_opt_params, lr=self.step_size, betas=(0.9, 0.999))
+            body_optimizer = torch.optim.Adam(
+                body_opt_params, lr=self.step_size, betas=(0.9, 0.999))
 
             for i in range(self.num_iters):
                 smpl_output = self.smpl(global_orient=global_orient,
@@ -159,8 +161,8 @@ class SMPLify():
                                         betas=betas)
                 model_joints = smpl_output.joints
                 loss = temporal_body_fitting_loss(body_pose, betas, model_joints, camera_translation, camera_center,
-                                         joints_2d, joints_conf, self.pose_prior,
-                                         focal_length=self.focal_length)
+                                                  joints_2d, joints_conf, self.pose_prior,
+                                                  focal_length=self.focal_length)
                 body_optimizer.zero_grad()
                 loss.backward()
                 body_optimizer.step()
@@ -186,11 +188,11 @@ class SMPLify():
 
         # Back to weak perspective camera
         camera_translation = torch.stack([
-            2 * 5000. / (224 * camera_translation[:,2] + 1e-9),
-            camera_translation[:,0], camera_translation[:,1]
+            2 * 5000. / (224 * camera_translation[:, 2] + 1e-9),
+            camera_translation[:, 0], camera_translation[:, 1]
         ], dim=-1)
 
-        betas = betas.repeat(pose.shape[0],1)
+        betas = betas.repeat(pose.shape[0], 1)
         output = {
             'theta': torch.cat([camera_translation, pose, betas], dim=1),
             'verts': vertices,
@@ -230,8 +232,8 @@ class SMPLify():
                                     betas=betas, return_full_pose=True)
             model_joints = smpl_output.joints
             reprojection_loss = temporal_body_fitting_loss(body_pose, betas, model_joints, cam_t, camera_center,
-                                                  joints_2d, joints_conf, self.pose_prior,
-                                                  focal_length=self.focal_length,
-                                                  output='reprojection')
+                                                           joints_2d, joints_conf, self.pose_prior,
+                                                           focal_length=self.focal_length,
+                                                           output='reprojection')
 
         return reprojection_loss

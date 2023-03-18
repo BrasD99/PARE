@@ -49,8 +49,8 @@ class ArgumentParserForBlender(argparse.ArgumentParser):
         """
         try:
             idx = sys.argv.index("--")
-            return sys.argv[idx+1:] # the list after '--'
-        except ValueError as e: # '--' not in the list:
+            return sys.argv[idx+1:]  # the list after '--'
+        except ValueError as e:  # '--' not in the list:
             return []
 
     # overrides superclass
@@ -62,6 +62,7 @@ class ArgumentParserForBlender(argparse.ArgumentParser):
         usage examples and details.
         """
         return super().parse_args(args=self._get_argv_after_doubledash())
+
 
 def get_colors(c):
     colors = {
@@ -88,6 +89,8 @@ def get_colors(c):
 
 # Computes rotation matrix through Rodrigues formula as in cv2.Rodrigues
 #   Source: smpl/plugins/blender/corrective_bpy_sh.py
+
+
 def Rodrigues(rotvec):
     theta = np.linalg.norm(rotvec)
     r = (rotvec / theta).reshape(3, 1) if theta > 0. else rotvec
@@ -160,13 +163,15 @@ def set_camera_intrinsics_from_opencv(camera, width, height, fx, fy, cx, cy):
 
 
 def np_array_from_image(img_name):
-    img = bpy.data.images.load(img_name, check_existing=True) # bpy.data.images[img_name]
+    # bpy.data.images[img_name]
+    img = bpy.data.images.load(img_name, check_existing=True)
     img = np.array(img.pixels[:])
     return img
 
 
 def save_image(fname, img):
-    output_image = bpy.data.images.new('save_img', height=img.shape[0], width=img.shape[1])
+    output_image = bpy.data.images.new(
+        'save_img', height=img.shape[0], width=img.shape[1])
     output_image.file_format = 'PNG'
     output_image.pixels = img.ravel()
     output_image.filepath_raw = fname
@@ -183,9 +188,9 @@ def overlay_smooth(img, render):
 
     # breakpoint()
 
-    m = render[:, :, -1:] #  / 255.
+    m = render[:, :, -1:]  # / 255.
     i = img[:, :, :3] * (1 - m) + render[:, :, :3] * m
-    i = np.clip(i, 0., 1.) # .astype(np.uint8)
+    i = np.clip(i, 0., 1.)  # .astype(np.uint8)
     i = np.concatenate([i, np.zeros((img_size, img_size, 1))], axis=-1)
     return i
 
@@ -228,11 +233,13 @@ def process_data(object_path, output_dir, numpy_path, wireframe, quads, width, h
 
     camera = bpy.data.objects['Camera']
 
-    set_camera_extrinsics_from_opencv(camera, (0.0, 0.0, 0.0), camera_translation)
+    set_camera_extrinsics_from_opencv(
+        camera, (0.0, 0.0, 0.0), camera_translation)
 
     scale = 1
 
-    set_camera_intrinsics_from_opencv(camera, width, height, 5000 * scale, 5000 * scale, width / 2, height / 2)
+    set_camera_intrinsics_from_opencv(
+        camera, width, height, 5000 * scale, 5000 * scale, width / 2, height / 2)
 
     ####################
     # Render
@@ -247,8 +254,10 @@ def process_data(object_path, output_dir, numpy_path, wireframe, quads, width, h
     else:
         # Overlay image
         filepath = os.path.join(output_dir, output_file)
-        overlay_img = overlay_smooth(filepath.replace('_render.png', '.jpg'), filepath)
-        save_image(filepath.replace('_render.png', '_overlay.png'), overlay_img)
+        overlay_img = overlay_smooth(
+            filepath.replace('_render.png', '.jpg'), filepath)
+        save_image(filepath.replace(
+            '_render.png', '_overlay.png'), overlay_img)
 
     # Delete last selected object from scene
     object.select_set(True)
@@ -293,11 +302,13 @@ def render_turntable(object_path, output_fname, numpy_path, wireframe, quads, wi
 
     camera = bpy.data.objects['Camera']
 
-    set_camera_extrinsics_from_opencv(camera, (0.0, 0.0, 0.0), camera_translation)
+    set_camera_extrinsics_from_opencv(
+        camera, (0.0, 0.0, 0.0), camera_translation)
 
     scale = 1
 
-    set_camera_intrinsics_from_opencv(camera, width, height, 5000 * scale, 5000 * scale, width / 2, height / 2)
+    set_camera_intrinsics_from_opencv(
+        camera, width, height, 5000 * scale, 5000 * scale, width / 2, height / 2)
 
     ####################
     # Render
@@ -325,14 +336,22 @@ def render_turntable(object_path, output_fname, numpy_path, wireframe, quads, wi
 
 if __name__ == '__main__':
     parser = ArgumentParserForBlender()
-    parser.add_argument('-i', '--inp', type=str, required=True, help='input directory')
-    parser.add_argument('-o', '--out', type=str, default=None, help='output directory')
-    parser.add_argument('-w', '--wireframe', action='store_true', help='draws quad wireframe')
-    parser.add_argument('-t', '--thickness', type=float, default=0.15, help='wireframe thickness')
-    parser.add_argument('-c', '--color', type=str, default='turkuaz', help='mesh color')
-    parser.add_argument('-s', '--size', type=int, default=720, help='image size')
-    parser.add_argument('--sideview', action='store_true', help='flag to render side view meshes')
-    parser.add_argument('--turntable', action='store_true', help='render with turntable')
+    parser.add_argument('-i', '--inp', type=str,
+                        required=True, help='input directory')
+    parser.add_argument('-o', '--out', type=str,
+                        default=None, help='output directory')
+    parser.add_argument('-w', '--wireframe',
+                        action='store_true', help='draws quad wireframe')
+    parser.add_argument('-t', '--thickness', type=float,
+                        default=0.15, help='wireframe thickness')
+    parser.add_argument('-c', '--color', type=str,
+                        default='turkuaz', help='mesh color')
+    parser.add_argument('-s', '--size', type=int,
+                        default=720, help='image size')
+    parser.add_argument('--sideview', action='store_true',
+                        help='flag to render side view meshes')
+    parser.add_argument('--turntable', action='store_true',
+                        help='render with turntable')
     args = parser.parse_args()
 
     # argv = sys.argv
@@ -341,7 +360,8 @@ if __name__ == '__main__':
     print('Input arguments:', args)  # --> ['example', 'args', '123']
 
     if args.turntable:
-        assert args.inp.endswith('.obj') is True, 'Single obj file should be provided for turntable.'
+        assert args.inp.endswith(
+            '.obj') is True, 'Single obj file should be provided for turntable.'
 
     if args.inp.endswith('.obj'):
         print('Processing a single file')
@@ -352,15 +372,18 @@ if __name__ == '__main__':
         output_dir = input_dir
     else:
         input_dir = args.inp
-        output_dir = args.out if args.out else input_dir.replace('mesh_output', 'blender_output')
+        output_dir = args.out if args.out else input_dir.replace(
+            'mesh_output', 'blender_output')
         input_dir = os.path.abspath(input_dir)
         output_dir = os.path.abspath(output_dir)
         os.makedirs(output_dir, exist_ok=True)
         # Process data in directory
         if args.sideview:
-            filelist = [x for x in sorted(os.listdir(input_dir)) if x.endswith('.obj')]
+            filelist = [x for x in sorted(
+                os.listdir(input_dir)) if x.endswith('.obj')]
         else:
-            filelist = [x for x in sorted(os.listdir(input_dir)) if x.endswith('.obj') and not x.endswith('_rot.obj')]
+            filelist = [x for x in sorted(os.listdir(input_dir)) if x.endswith(
+                '.obj') and not x.endswith('_rot.obj')]
 
     wireframe = args.wireframe
     debug = False
@@ -372,7 +395,8 @@ if __name__ == '__main__':
 
     # Change mesh color
     mc = get_colors(args.color) / 255.
-    bpy.data.materials['Body'].node_tree.nodes["Principled BSDF"].inputs[0].default_value = (*mc, 1)
+    bpy.data.materials['Body'].node_tree.nodes["Principled BSDF"].inputs[0].default_value = (
+        *mc, 1)
 
     img_size = args.size
 
@@ -393,7 +417,7 @@ if __name__ == '__main__':
             os.makedirs(out_dir, exist_ok=True)
 
             frame_idx = 0
-            for rot in range(0,360,4):
+            for rot in range(0, 360, 4):
                 output_file = os.path.join(out_dir, f'{frame_idx:03d}.png')
                 render_turntable(
                     mesh_fn,

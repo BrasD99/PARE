@@ -13,11 +13,12 @@ models = [
     'hrnet_w64',
 ]
 
+
 class HRNet(nn.Module):
     def __init__(self, arch, pretrained=True):
         super(HRNet, self).__init__()
         self.m = timm.create_model(arch, pretrained=pretrained)
-        
+
     def forward(self, x):
         return self.m.forward_features(x)
 

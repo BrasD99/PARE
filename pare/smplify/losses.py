@@ -38,7 +38,8 @@ def body_fitting_loss(body_pose, betas, model_joints, camera_t, camera_center,
     # sigma = 10.
 
     batch_size = body_pose.shape[0]
-    rotation = torch.eye(3, device=body_pose.device).unsqueeze(0).expand(batch_size, -1, -1)
+    rotation = torch.eye(3, device=body_pose.device).unsqueeze(
+        0).expand(batch_size, -1, -1)
     projected_joints = perspective_projection(model_joints, rotation, camera_t,
                                               focal_length, camera_center)
 
@@ -50,12 +51,14 @@ def body_fitting_loss(body_pose, betas, model_joints, camera_t, camera_center,
     pose_prior_loss = (pose_prior_weight ** 2) * pose_prior(body_pose, betas)
 
     # Angle prior for knees and elbows
-    angle_prior_loss = (angle_prior_weight ** 2) * angle_prior(body_pose).sum(dim=-1)
+    angle_prior_loss = (angle_prior_weight ** 2) * \
+        angle_prior(body_pose).sum(dim=-1)
 
     # Regularizer to prevent betas from taking large values
     shape_prior_loss = (shape_prior_weight ** 2) * (betas ** 2).sum(dim=-1)
 
-    total_loss = reprojection_loss.sum(dim=-1) + pose_prior_loss + angle_prior_loss + shape_prior_loss
+    total_loss = reprojection_loss.sum(
+        dim=-1) + pose_prior_loss + angle_prior_loss + shape_prior_loss
     print(f'joints: {reprojection_loss[0].sum().item():.2f}, '
           f'pose_prior: {pose_prior_loss[0].item():.2f}, '
           f'angle_prior: {angle_prior_loss[0].item():.2f}, '
@@ -75,7 +78,8 @@ def camera_fitting_loss(model_joints, camera_t, camera_t_est, camera_center, joi
 
     # Project model joints
     batch_size = model_joints.shape[0]
-    rotation = torch.eye(3, device=model_joints.device).unsqueeze(0).expand(batch_size, -1, -1)
+    rotation = torch.eye(3, device=model_joints.device).unsqueeze(
+        0).expand(batch_size, -1, -1)
     projected_joints = perspective_projection(model_joints, rotation, camera_t,
                                               focal_length, camera_center)
 
@@ -90,11 +94,14 @@ def camera_fitting_loss(model_joints, camera_t, camera_t_est, camera_center, joi
 
     # Check if for each example in the batch all 4 OpenPose detections are valid, otherwise use the GT detections
     # OpenPose joints are more reliable for this task, so we prefer to use them if possible
-    is_valid = (joints_conf[:, op_joints_ind].min(dim=-1)[0][:, None, None] > 0).float()
-    reprojection_loss = (is_valid * reprojection_error_op + (1 - is_valid) * reprojection_error_gt).sum(dim=(1, 2))
+    is_valid = (joints_conf[:, op_joints_ind].min(
+        dim=-1)[0][:, None, None] > 0).float()
+    reprojection_loss = (is_valid * reprojection_error_op +
+                         (1 - is_valid) * reprojection_error_gt).sum(dim=(1, 2))
 
     # Loss that penalizes deviation from depth estimate
-    depth_loss = (depth_loss_weight ** 2) * (camera_t[:, 2] - camera_t_est[:, 2]) ** 2
+    depth_loss = (depth_loss_weight ** 2) * \
+        (camera_t[:, 2] - camera_t_est[:, 2]) ** 2
 
     total_loss = reprojection_loss + depth_loss
     return total_loss.sum()
@@ -115,7 +122,8 @@ def temporal_body_fitting_loss(body_pose, betas, model_joints, camera_t, camera_
     # sigma = 10.
 
     batch_size = body_pose.shape[0]
-    rotation = torch.eye(3, device=body_pose.device).unsqueeze(0).expand(batch_size, -1, -1)
+    rotation = torch.eye(3, device=body_pose.device).unsqueeze(
+        0).expand(batch_size, -1, -1)
     projected_joints = perspective_projection(model_joints, rotation, camera_t,
                                               focal_length, camera_center)
 
@@ -127,19 +135,22 @@ def temporal_body_fitting_loss(body_pose, betas, model_joints, camera_t, camera_
     pose_prior_loss = (pose_prior_weight ** 2) * pose_prior(body_pose, betas)
 
     # Angle prior for knees and elbows
-    angle_prior_loss = (angle_prior_weight ** 2) * angle_prior(body_pose).sum(dim=-1)
+    angle_prior_loss = (angle_prior_weight ** 2) * \
+        angle_prior(body_pose).sum(dim=-1)
 
     # Regularizer to prevent betas from taking large values
     shape_prior_loss = (shape_prior_weight ** 2) * (betas ** 2).sum(dim=-1)
 
-    total_loss = reprojection_loss.sum(dim=-1) + pose_prior_loss + angle_prior_loss + shape_prior_loss
+    total_loss = reprojection_loss.sum(
+        dim=-1) + pose_prior_loss + angle_prior_loss + shape_prior_loss
 
     # Smooth 2d joint loss
     joint_conf_diff = joints_conf[1:]
     joints_2d_diff = projected_joints[1:] - projected_joints[:-1]
     smooth_j2d_loss = (joint_conf_diff ** 2) * joints_2d_diff.abs().sum(dim=-1)
     smooth_j2d_loss = torch.cat(
-        [torch.zeros(1, smooth_j2d_loss.shape[1], device=body_pose.device), smooth_j2d_loss]
+        [torch.zeros(1, smooth_j2d_loss.shape[1],
+                     device=body_pose.device), smooth_j2d_loss]
     ).sum(dim=-1)
     smooth_j2d_loss = (smooth_2d_weight ** 2) * smooth_j2d_loss
 
@@ -148,7 +159,8 @@ def temporal_body_fitting_loss(body_pose, betas, model_joints, camera_t, camera_
     # joints_3d_diff = joints_3d_diff * 100.
     smooth_j3d_loss = (joint_conf_diff ** 2) * joints_3d_diff.abs().sum(dim=-1)
     smooth_j3d_loss = torch.cat(
-        [torch.zeros(1, smooth_j3d_loss.shape[1], device=body_pose.device), smooth_j3d_loss]
+        [torch.zeros(1, smooth_j3d_loss.shape[1],
+                     device=body_pose.device), smooth_j3d_loss]
     ).sum(dim=-1)
     smooth_j3d_loss = (smooth_3d_weight ** 2) * smooth_j3d_loss
 
@@ -175,7 +187,8 @@ def temporal_camera_fitting_loss(model_joints, camera_t, camera_t_est, camera_ce
 
     # Project model joints
     batch_size = model_joints.shape[0]
-    rotation = torch.eye(3, device=model_joints.device).unsqueeze(0).expand(batch_size, -1, -1)
+    rotation = torch.eye(3, device=model_joints.device).unsqueeze(
+        0).expand(batch_size, -1, -1)
     projected_joints = perspective_projection(model_joints, rotation, camera_t,
                                               focal_length, camera_center)
 
@@ -190,11 +203,13 @@ def temporal_camera_fitting_loss(model_joints, camera_t, camera_t_est, camera_ce
 
     # Check if for each example in the batch all 4 OpenPose detections are valid, otherwise use the GT detections
     # OpenPose joints are more reliable for this task, so we prefer to use them if possible
-    is_valid = (joints_conf[:, op_joints_ind].min(dim=-1)[0][:, None, None] > 0).float()
+    is_valid = (joints_conf[:, op_joints_ind].min(
+        dim=-1)[0][:, None, None] > 0).float()
     reprojection_loss = (is_valid * reprojection_error_op).sum(dim=(1, 2))
 
     # Loss that penalizes deviation from depth estimate
-    depth_loss = (depth_loss_weight ** 2) * (camera_t[:, 2] - camera_t_est[:, 2]) ** 2
+    depth_loss = (depth_loss_weight ** 2) * \
+        (camera_t[:, 2] - camera_t_est[:, 2]) ** 2
 
     total_loss = reprojection_loss + depth_loss
     return total_loss.sum()

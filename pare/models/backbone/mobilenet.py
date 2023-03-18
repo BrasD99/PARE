@@ -36,7 +36,8 @@ class ConvBNReLU(nn.Sequential):
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         super(ConvBNReLU, self).__init__(
-            nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=False),
+            nn.Conv2d(in_planes, out_planes, kernel_size, stride,
+                      padding, groups=groups, bias=False),
             norm_layer(out_planes),
             nn.ReLU6(inplace=True)
         )
@@ -57,10 +58,12 @@ class InvertedResidual(nn.Module):
         layers = []
         if expand_ratio != 1:
             # pw
-            layers.append(ConvBNReLU(inp, hidden_dim, kernel_size=1, norm_layer=norm_layer))
+            layers.append(ConvBNReLU(inp, hidden_dim,
+                          kernel_size=1, norm_layer=norm_layer))
         layers.extend([
             # dw
-            ConvBNReLU(hidden_dim, hidden_dim, stride=stride, groups=hidden_dim, norm_layer=norm_layer),
+            ConvBNReLU(hidden_dim, hidden_dim, stride=stride,
+                       groups=hidden_dim, norm_layer=norm_layer),
             # pw-linear
             nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
             norm_layer(oup),
@@ -124,18 +127,23 @@ class MobileNetV2(nn.Module):
                              "or a 4-element list, got {}".format(inverted_residual_setting))
 
         # building first layer
-        input_channel = _make_divisible(input_channel * width_mult, round_nearest)
-        self.last_channel = _make_divisible(last_channel * max(1.0, width_mult), round_nearest)
-        features = [ConvBNReLU(3, input_channel, stride=2, norm_layer=norm_layer)]
+        input_channel = _make_divisible(
+            input_channel * width_mult, round_nearest)
+        self.last_channel = _make_divisible(
+            last_channel * max(1.0, width_mult), round_nearest)
+        features = [ConvBNReLU(
+            3, input_channel, stride=2, norm_layer=norm_layer)]
         # building inverted residual blocks
         for t, c, n, s in inverted_residual_setting:
             output_channel = _make_divisible(c * width_mult, round_nearest)
             for i in range(n):
                 stride = s if i == 0 else 1
-                features.append(block(input_channel, output_channel, stride, expand_ratio=t, norm_layer=norm_layer))
+                features.append(block(input_channel, output_channel,
+                                stride, expand_ratio=t, norm_layer=norm_layer))
                 input_channel = output_channel
         # building last several layers
-        features.append(ConvBNReLU(input_channel, self.last_channel, kernel_size=1, norm_layer=norm_layer))
+        features.append(ConvBNReLU(input_channel, self.last_channel,
+                        kernel_size=1, norm_layer=norm_layer))
         # make it nn.Sequential
         self.features = nn.Sequential(*features)
 

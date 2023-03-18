@@ -41,7 +41,8 @@ def smplify_runner(
         )
     # Convert predicted rotation matrices to axis-angle
     if pose2aa:
-        pred_pose = rotation_matrix_to_angle_axis(pred_rotmat.detach().reshape(-1, 3, 3)).reshape(batch_size, -1)
+        pred_pose = rotation_matrix_to_angle_axis(
+            pred_rotmat.detach().reshape(-1, 3, 3)).reshape(batch_size, -1)
     else:
         pred_pose = pred_rotmat
 
@@ -83,12 +84,13 @@ def smplify_runner(
     update = (new_opt_joint_loss < opt_joint_loss)
 
     new_opt_vertices = output['verts']
-    new_opt_cam_t = output['theta'][:,:3]
-    new_opt_pose = output['theta'][:,3:75]
-    new_opt_betas = output['theta'][:,75:]
+    new_opt_cam_t = output['theta'][:, :3]
+    new_opt_pose = output['theta'][:, 3:75]
+    new_opt_betas = output['theta'][:, 75:]
     new_opt_joints3d = output['kp_3d']
 
-    new_opt_pose = batch_rodrigues(new_opt_pose.reshape(-1, 3)).reshape(batch_size, 24, 3, 3)
+    new_opt_pose = batch_rodrigues(
+        new_opt_pose.reshape(-1, 3)).reshape(batch_size, 24, 3, 3)
 
     return_val = [
         update, new_opt_vertices.cpu(), new_opt_cam_t.cpu(),

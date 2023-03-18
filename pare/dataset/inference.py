@@ -50,9 +50,11 @@ class Inference(Dataset):
         self.norm_joints2d = np.zeros_like(self.joints2d)
 
         if self.has_keypoints:
-            bboxes, time_pt1, time_pt2 = get_all_bbox_params(joints2d, vis_thresh=0.3)
+            bboxes, time_pt1, time_pt2 = get_all_bbox_params(
+                joints2d, vis_thresh=0.3)
             bboxes[:, 2:] = 150. / bboxes[:, 2:]
-            self.bboxes = np.stack([bboxes[:, 0], bboxes[:, 1], bboxes[:, 2], bboxes[:, 2]]).T
+            self.bboxes = np.stack(
+                [bboxes[:, 0], bboxes[:, 1], bboxes[:, 2], bboxes[:, 2]]).T
 
             self.image_file_names = self.image_file_names[time_pt1:time_pt2]
             self.joints2d = joints2d[time_pt1:time_pt2]
@@ -64,7 +66,8 @@ class Inference(Dataset):
         return len(self.image_file_names)
 
     def __getitem__(self, idx):
-        img = cv2.cvtColor(cv2.imread(self.image_file_names[idx]), cv2.COLOR_BGR2RGB)
+        img = cv2.cvtColor(cv2.imread(
+            self.image_file_names[idx]), cv2.COLOR_BGR2RGB)
 
         bbox = self.bboxes[idx]
 
@@ -116,9 +119,11 @@ class ImageFolder(Dataset):
         self.norm_joints2d = np.zeros_like(self.joints2d)
 
         if self.has_keypoints:
-            bboxes, time_pt1, time_pt2 = get_all_bbox_params(joints2d, vis_thresh=0.3)
+            bboxes, time_pt1, time_pt2 = get_all_bbox_params(
+                joints2d, vis_thresh=0.3)
             bboxes[:, 2:] = 150. / bboxes[:, 2:]
-            self.bboxes = np.stack([bboxes[:, 0], bboxes[:, 1], bboxes[:, 2], bboxes[:, 2]]).T
+            self.bboxes = np.stack(
+                [bboxes[:, 0], bboxes[:, 1], bboxes[:, 2], bboxes[:, 2]]).T
 
             self.image_file_names = self.image_file_names[time_pt1:time_pt2]
             self.joints2d = joints2d[time_pt1:time_pt2]
@@ -127,7 +132,8 @@ class ImageFolder(Dataset):
         return len(self.image_file_names)
 
     def __getitem__(self, idx):
-        img = cv2.cvtColor(cv2.imread(self.image_file_names[idx]), cv2.COLOR_BGR2RGB)
+        img = cv2.cvtColor(cv2.imread(
+            self.image_file_names[idx]), cv2.COLOR_BGR2RGB)
 
         bbox = self.bboxes[idx]
 

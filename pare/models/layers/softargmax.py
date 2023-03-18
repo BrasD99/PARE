@@ -31,7 +31,8 @@ def softargmax1d(
     if temperature is None:
         temperature = torch.tensor(1.0, dtype=dtype, device=device)
     batch_size, num_channels, dim = heatmaps.shape
-    points = torch.arange(0, dim, device=device, dtype=dtype).reshape(1, 1, dim).expand(batch_size, -1, -1)
+    points = torch.arange(0, dim, device=device, dtype=dtype).reshape(
+        1, 1, dim).expand(batch_size, -1, -1)
     # y = torch.arange(0, height, device=device, dtype=dtype).reshape(1, 1, height, 1).expand(batch_size, -1, -1, width)
     # Should be Bx2xHxW
 
@@ -42,7 +43,8 @@ def softargmax1d(
         dim=-1)
 
     # Should be BxJx2
-    keypoints = (normalized_heatmap.reshape(batch_size, -1, dim) * points).sum(dim=-1)
+    keypoints = (normalized_heatmap.reshape(
+        batch_size, -1, dim) * points).sum(dim=-1)
 
     if normalize_keypoints:
         # Normalize keypoints to [-1, 1]
@@ -61,8 +63,10 @@ def softargmax2d(
     if temperature is None:
         temperature = torch.tensor(1.0, dtype=dtype, device=device)
     batch_size, num_channels, height, width = heatmaps.shape
-    x = torch.arange(0, width, device=device, dtype=dtype).reshape(1, 1, 1, width).expand(batch_size, -1, height, -1)
-    y = torch.arange(0, height, device=device, dtype=dtype).reshape(1, 1, height, 1).expand(batch_size, -1, -1, width)
+    x = torch.arange(0, width, device=device, dtype=dtype).reshape(
+        1, 1, 1, width).expand(batch_size, -1, height, -1)
+    y = torch.arange(0, height, device=device, dtype=dtype).reshape(
+        1, 1, height, 1).expand(batch_size, -1, -1, width)
     # Should be Bx2xHxW
     points = torch.cat([x, y], dim=1)
     normalized_heatmap = _softmax(
@@ -72,8 +76,8 @@ def softargmax2d(
 
     # Should be BxJx2
     keypoints = (
-            normalized_heatmap.reshape(batch_size, -1, 1, height * width) *
-            points.reshape(batch_size, 1, 2, -1)).sum(dim=-1)
+        normalized_heatmap.reshape(batch_size, -1, 1, height * width) *
+        points.reshape(batch_size, 1, 2, -1)).sum(dim=-1)
 
     if normalize_keypoints:
         # Normalize keypoints to [-1, 1]
@@ -93,9 +97,12 @@ def softargmax3d(
     if temperature is None:
         temperature = torch.tensor(1.0, dtype=dtype, device=device)
     batch_size, num_channels, height, width, depth = heatmaps.shape
-    x = torch.arange(0, width, device=device, dtype=dtype).reshape(1, 1, 1, width, 1).expand(batch_size, -1, height, -1, depth)
-    y = torch.arange(0, height, device=device, dtype=dtype).reshape(1, 1, height, 1, 1).expand(batch_size, -1, -1, width, depth)
-    z = torch.arange(0, depth, device=device, dtype=dtype).reshape(1, 1, 1, 1, depth).expand(batch_size, -1, height, width, -1)
+    x = torch.arange(0, width, device=device, dtype=dtype).reshape(
+        1, 1, 1, width, 1).expand(batch_size, -1, height, -1, depth)
+    y = torch.arange(0, height, device=device, dtype=dtype).reshape(
+        1, 1, height, 1, 1).expand(batch_size, -1, -1, width, depth)
+    z = torch.arange(0, depth, device=device, dtype=dtype).reshape(
+        1, 1, 1, 1, depth).expand(batch_size, -1, height, width, -1)
     # Should be Bx2xHxW
     points = torch.cat([x, y, z], dim=1)
     normalized_heatmap = _softmax(
@@ -105,8 +112,8 @@ def softargmax3d(
 
     # Should be BxJx3
     keypoints = (
-            normalized_heatmap.reshape(batch_size, -1, 1, height * width * depth) *
-            points.reshape(batch_size, 1, 3, -1)).sum(dim=-1)
+        normalized_heatmap.reshape(batch_size, -1, 1, height * width * depth) *
+        points.reshape(batch_size, 1, 3, -1)).sum(dim=-1)
 
     if normalize_keypoints:
         # Normalize keypoints to [-1, 1]

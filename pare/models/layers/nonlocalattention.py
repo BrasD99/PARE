@@ -44,7 +44,7 @@ class NonLocalAttention(nn.Module):
         out = torch.matmul(input, norm_attention)
         out = self.conv1x1(out)
 
-        out = out.unsqueeze(-1) # [N, F, J, 1]
+        out = out.unsqueeze(-1)  # [N, F, J, 1]
         return out
 
 

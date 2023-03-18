@@ -32,11 +32,13 @@ def get_image(filename):
 def do_augmentation(scale_factor=0.3, color_factor=0.2):
     scale = random.uniform(1.2, 1.2+scale_factor)
     # scale = np.clip(np.random.randn(), 0.0, 1.0) * scale_factor + 1.2
-    rot = 0 # np.clip(np.random.randn(), -2.0, 2.0) * aug_config.rot_factor if random.random() <= aug_config.rot_aug_rate else 0
-    do_flip = False # aug_config.do_flip_aug and random.random() <= aug_config.flip_aug_rate
+    # np.clip(np.random.randn(), -2.0, 2.0) * aug_config.rot_factor if random.random() <= aug_config.rot_aug_rate else 0
+    rot = 0
+    do_flip = False  # aug_config.do_flip_aug and random.random() <= aug_config.flip_aug_rate
     c_up = 1.0 + color_factor
     c_low = 1.0 - color_factor
-    color_scale = [random.uniform(c_low, c_up), random.uniform(c_low, c_up), random.uniform(c_low, c_up)]
+    color_scale = [random.uniform(c_low, c_up), random.uniform(
+        c_low, c_up), random.uniform(c_low, c_up)]
     return scale, rot, do_flip, color_scale
 
 
@@ -61,11 +63,13 @@ def gen_trans_from_patch_cv(c_x, c_y, src_width, src_height, dst_width, dst_heig
     src_h = src_height * scale
     src_center = np.zeros(2)
     src_center[0] = c_x
-    src_center[1] = c_y # np.array([c_x, c_y], dtype=np.float32)
+    src_center[1] = c_y  # np.array([c_x, c_y], dtype=np.float32)
     # augment rotation
     rot_rad = np.pi * rot / 180
-    src_downdir = rotate_2d(np.array([0, src_h * 0.5], dtype=np.float32), rot_rad)
-    src_rightdir = rotate_2d(np.array([src_w * 0.5, 0], dtype=np.float32), rot_rad)
+    src_downdir = rotate_2d(
+        np.array([0, src_h * 0.5], dtype=np.float32), rot_rad)
+    src_rightdir = rotate_2d(
+        np.array([src_w * 0.5, 0], dtype=np.float32), rot_rad)
 
     dst_w = dst_width
     dst_h = dst_height
@@ -99,11 +103,12 @@ def generate_patch_image_cv(cvimg, c_x, c_y, bb_width, bb_height, patch_width, p
         img = img[:, ::-1, :]
         c_x = img_width - c_x - 1
 
-    trans = gen_trans_from_patch_cv(c_x, c_y, bb_width, bb_height, patch_width, patch_height, scale, rot, inv=False)
+    trans = gen_trans_from_patch_cv(
+        c_x, c_y, bb_width, bb_height, patch_width, patch_height, scale, rot, inv=False)
 
     img_patch = cv2.warpAffine(img, trans, (int(patch_width), int(patch_height)),
                                flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-    
+
     return img_patch, trans
 
 
@@ -197,7 +202,7 @@ def get_single_image_crop(image, bbox, scale=1.3):
     elif isinstance(image, torch.Tensor):
         image = image.numpy()
     elif not isinstance(image, np.ndarray):
-        raise('Unknown type for object', type(image))
+        raise ('Unknown type for object', type(image))
 
     crop_image, _ = generate_patch_image_cv(
         cvimg=image.copy(),
@@ -228,7 +233,7 @@ def get_single_image_crop_demo(image, bbox, kp_2d, scale=1.2, crop_size=224):
     elif isinstance(image, torch.Tensor):
         image = image.numpy()
     elif not isinstance(image, np.ndarray):
-        raise('Unknown type for object', type(image))
+        raise ('Unknown type for object', type(image))
 
     crop_image, trans = generate_patch_image_cv(
         cvimg=image.copy(),
@@ -245,9 +250,9 @@ def get_single_image_crop_demo(image, bbox, kp_2d, scale=1.2, crop_size=224):
 
     raw_image = crop_image.copy()
 
-    #cv2.imshow('Output', raw_image)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
+    # cv2.imshow('Output', raw_image)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     crop_image = convert_cvimg_to_tensor(crop_image)
 
@@ -256,7 +261,7 @@ def get_single_image_crop_demo(image, bbox, kp_2d, scale=1.2, crop_size=224):
 
 def read_image(filename):
     image = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
-    image = cv2.resize(image, (224,224))
+    image = cv2.resize(image, (224, 224))
     return convert_cvimg_to_tensor(image)
 
 
@@ -289,8 +294,9 @@ def torch_vid2numpy(video):
     mean = mean[np.newaxis, np.newaxis, ..., np.newaxis, np.newaxis]
     std = std[np.newaxis, np.newaxis, ..., np.newaxis, np.newaxis]
 
-    video = (video - mean) / std # [:, :, i, :, :].sub_(mean[i]).div_(std[i]).clamp_(0., 1.).mul_(255.)
-    video = video.clip(0.,1.) * 255
+    # [:, :, i, :, :].sub_(mean[i]).div_(std[i]).clamp_(0., 1.).mul_(255.)
+    video = (video - mean) / std
+    video = video.clip(0., 1.) * 255
     video = video.astype(np.uint8)
     return video
 
@@ -298,8 +304,10 @@ def torch_vid2numpy(video):
 def get_bbox_from_kp2d(kp_2d):
     # get bbox
     if len(kp_2d.shape) > 2:
-        ul = np.array([kp_2d[:, :, 0].min(axis=1), kp_2d[:, :, 1].min(axis=1)])  # upper left
-        lr = np.array([kp_2d[:, :, 0].max(axis=1), kp_2d[:, :, 1].max(axis=1)])  # lower right
+        ul = np.array([kp_2d[:, :, 0].min(axis=1),
+                      kp_2d[:, :, 1].min(axis=1)])  # upper left
+        lr = np.array([kp_2d[:, :, 0].max(axis=1),
+                      kp_2d[:, :, 1].max(axis=1)])  # lower right
     else:
         ul = np.array([kp_2d[:, 0].min(), kp_2d[:, 1].min()])  # upper left
         lr = np.array([kp_2d[:, 0].max(), kp_2d[:, 1].max()])  # lower right

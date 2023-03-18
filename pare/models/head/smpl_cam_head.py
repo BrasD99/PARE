@@ -79,7 +79,6 @@ class SMPLCamHead(nn.Module):
         # logger.debug(f'FIMG cam: {cam_t}')
         # logger.debug(f'joints2d: {joints2d}')
 
-
         if normalize_joints2d:
             # Normalize keypoints to [-1,1]
             joints2d = joints2d / (self.img_res / 2.)
@@ -106,10 +105,11 @@ def perspective_projection(points, rotation, translation, cam_intrinsics):
     points = points + translation.unsqueeze(1)
 
     # Apply perspective distortion
-    projected_points = points / points[:,:,-1].unsqueeze(-1)
+    projected_points = points / points[:, :, -1].unsqueeze(-1)
 
     # Apply camera intrinsics
-    projected_points = torch.einsum('bij,bkj->bki', K, projected_points.float())
+    projected_points = torch.einsum(
+        'bij,bkj->bki', K, projected_points.float())
 
     return projected_points[:, :, :-1]
 

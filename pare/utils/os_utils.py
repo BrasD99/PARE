@@ -44,10 +44,13 @@ def copy_code(output_folder, curr_folder, code_folder='code'):
         dest_folder = osp.join(code_folder, osp.split(src_folder)[1])
         if os.path.exists(dest_folder):
             shutil.rmtree(dest_folder)
-        shutil.copytree(src_folder, dest_folder, ignore=ignore_patterns('*.pyc', 'tmp*', '__pycache__'))
+        shutil.copytree(src_folder, dest_folder, ignore=ignore_patterns(
+            '*.pyc', 'tmp*', '__pycache__'))
 
-    logger.info(f'Compressing code folder to {os.path.join(output_folder, "code.zip")}')
-    shutil.make_archive(os.path.join(output_folder, 'code'), 'zip', code_folder)
+    logger.info(
+        f'Compressing code folder to {os.path.join(output_folder, "code.zip")}')
+    shutil.make_archive(os.path.join(
+        output_folder, 'code'), 'zip', code_folder)
 
     logger.info(f'Removing {code_folder}')
     shutil.rmtree(code_folder)
